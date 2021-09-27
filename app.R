@@ -3,6 +3,7 @@ library(shiny)
 library(shinydashboard)
 library(plotly)
 
+#
 # some global variables we need to set
 sqlFile <- "resources/hdrfData.sqlite"
 rdsFile <- "resources/hdrfLite.rds"
