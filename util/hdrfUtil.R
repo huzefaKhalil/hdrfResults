@@ -5,7 +5,7 @@
 library(dgeResults) # use this a lot... need it loaded as it provides classes of the object types we are working with
 
 loadData <- function() {
-  conn <- DBI::dbConnect(RSQLite::SQLite(), sqlFile)
+  conn <- sqlFile
   
   hdrf <- readRDS(rdsFile)
   

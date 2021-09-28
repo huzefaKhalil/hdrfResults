@@ -189,10 +189,12 @@ rrhoMS <- function(id, tData) {
             
             # get selected data
             selectedData$sData <-
-              isolate(flattenDge(
-                vals$selectedHdrf,
-                conn = tData$conn
-              ))
+              isolate({
+                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+                theData <- flattenDge(sIds, conn = tempConn)
+                DBI::dbDisconnect(tempConn)
+                theData
+              })
             
             selectedData$comps <- printComparison(vals$selectedHdrf)
             

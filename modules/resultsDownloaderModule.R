@@ -189,10 +189,14 @@ resultsDownloaderMS <- function(id, tData) {
             
             incProgress(0.2, message = "Loading Data...")
             
+            tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+            
             outDT <- lapply(names(sComp), function(x) {
               temp <- getComparisonById(vals$selectedHdrf, x)
-              flattenDge(temp, conn = tData$conn)
+              flattenDge(temp, conn = tempConn)
             })
+            
+            DBI::dbDisconnect(tempConn)
             
             incProgress(0.5, message = "Writing Data...")
             

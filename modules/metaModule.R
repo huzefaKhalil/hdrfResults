@@ -204,8 +204,10 @@ metaAnalysisMS <- function(id, tData) {
           # 3. If the file doesn't exist, let's get the data
           sIds <- getComparisonById(tData$hdrf, sIds)
           
-          theData <- flattenDge(sIds, conn = tData$conn)
-          
+          tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+          theData <- flattenDge(sIds, conn = tempConn)
+          DBI::dbDisconnect(tempConn)
+
           # first, split it by id
           theData <- split(theData, by = "id")
           

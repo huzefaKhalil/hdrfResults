@@ -274,36 +274,53 @@ resultsViewerMS <- function(id, tData) {
             
             # get selected data
             selectedData$sData <-
-              isolate(flattenDge(
-                vals$selectedHdrf,
-                geneId = sGenes,
-                conn = tData$conn
-              ))
+              isolate({
+                
+                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+                theData <- flattenDge(vals$selectedHdrf, geneId = sGenes, conn = tempConn)
+                DBI::dbDisconnect(tempConn)
+                
+                theData
+              })
             
             incProgress(0.2, detail = "Fetching data")
             
             # get the columns for all comparisons
             selectedData$pvalData <-
-              isolate(
-                getColumnData(
+              isolate({
+                
+                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+
+                theData <- getColumnData(
                   tData$hdrf,
                   column = "pvalue",
                   comparisonID = sIds,
-                  conn = tData$conn
+                  conn = tempConn
                 )
-              )
+                
+                DBI::dbDisconnect(tempConn)
+                
+                theData
+              })
             
             incProgress(0.3, detail = "Fetching data")
             
             selectedData$estimateData <-
-              isolate(
-                getColumnData(
+              isolate({
+                
+                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+                
+                theData <- getColumnData(
                   tData$hdrf,
                   column = "logFC",
                   comparisonID = sIds,
-                  conn = tData$conn
+                  conn = tempConn
                 )
-              )
+                
+                DBI::dbDisconnect(tempConn)
+                
+                theData
+              })
             
             incProgress(0.6, detail = "Plotting data")
             
@@ -354,10 +371,11 @@ resultsViewerMS <- function(id, tData) {
       output$downloadData <- downloadHandler(
         filename = "hdrfDataDownload.csv",
         content = function(file) {
-          tData <-
-            flattenDge(vals$selectedHdrf,
-                       geneId = input$genes,
-                       conn = tData$conn)
+
+          tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+          tData <- flattenDge(vals$selectedHdrf, geneId = input$genes, conn = tempConn)
+          DBI::dbDisconnect(tempConn)
+
           data.table::fwrite(tData[,-c("id", "comparisonID")], file)
         }
       )
