@@ -332,13 +332,13 @@ rrhoMS <- function(id, tData) {
       
       # download helpers
       output$saveEnrichment <- downloadHandler(
-        filename = "Enrichment_plot.png",
+        filename = "Enrichment_plot.svg",
         content = function(file) {
-          png(file, width = 720, height = 600)
+          svg(file, width = 720/72, height = 600/72)
           print(rrhoRes$enrichmentPlot)
           dev.off()
         },
-        contentType = "image/png"
+        contentType = "image/svg+xml"
       )
       
       output$saveGeneList <- downloadHandler(
