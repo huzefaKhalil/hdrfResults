@@ -3,6 +3,8 @@ metaAnalysisUI <- function(id) {
   ns <- NS(id)
   
   fluidPage(
+    shinyjs::useShinyjs(),
+    
     titlePanel(title = "Meta-Analysis", windowTitle = "Meta-Analysis"),
     box(
       width = 12,

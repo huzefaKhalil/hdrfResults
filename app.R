@@ -23,6 +23,8 @@ source("ui/resultsViewerUI.R", local = TRUE)
 source("ui/resultsDownloaderUI.R", local = TRUE)
 source("ui/metaUI.R", local = TRUE)
 source("ui/rrhoUI.R", local = TRUE)
+source("ui/animalModelsUI.R", local = TRUE)
+source("ui/statModelUI.R", local = TRUE)
 
 # finally the modules themselves
 source("modules/resultsViewerModule.R", local = TRUE)
@@ -35,7 +37,7 @@ ui <- dashboardPage(
     skin = "purple",
     
     # Application title
-    dashboardHeader(title = "HDRF Results Viewer", titleWidth = "320px"),
+    dashboardHeader(title = "HDRF Gene Explorer", titleWidth = "320px"),
     
     # setup the menu
     dashboardSidebar(sidebarMenuOutput("menu")),
@@ -43,8 +45,8 @@ ui <- dashboardPage(
     dashboardBody(
         
         tabItems(
-            tabItem(tabName = "mInfo", h2("Model Information (Todo)")),
-            tabItem(tabName = "sInfo", h2("Statistical Information (Todo)")),
+            tabItem(tabName = "mInfo", animalModelsUI(id = "animalModelInfo")),
+            tabItem(tabName = "sInfo", statModelUI(id = "statModelInfo")),
             tabItem(tabName = "viewer", resultsViewerUI(id = "viewer")),
             tabItem(tabName = "downloader", resultsDownloaderUI(id = "downloader")),
             tabItem(tabName = "meta", metaAnalysisUI(id = "meta")),
@@ -60,8 +62,8 @@ server <- function(input, output) {
     
     output$menu <- shinydashboard::renderMenu({
         shinydashboard::sidebarMenu(
-            shinydashboard::menuItem("Model Information", tabName = "mInfo"),
-            shinydashboard::menuItem("Stat Information", tabName = "sInfo"),
+            shinydashboard::menuItem("Animal Models", tabName = "mInfo"),
+            shinydashboard::menuItem("Statistal Methods", tabName = "sInfo"),
             shinydashboard::menuItem("Results Viewer", tabName = "viewer"),
             shinydashboard::menuItem("Data Download", tabName = "downloader"),
             shinydashboard::menuItem("Meta Analysis", tabName = "meta"),
@@ -80,7 +82,7 @@ server <- function(input, output) {
         } else if (input$tabs == "rrho") {
             rrhoMS("rrho", tData = tData)
         }
-    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+    }, ignoreNULL = TRUE, ignoreInit = FALSE)
 }
 
 # Run the application 

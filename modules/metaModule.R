@@ -96,9 +96,9 @@ metaAnalysisMS <- function(id, tData) {
       #* This code is for selecting comparisons and unselecting them
       #****************************************************
       
-      # enable button to select comparison
+      #enable button to select comparison
       observe({
-        shinyjs::disable("selectComparisons")
+        shinyjs::disable(id = "selectComparisons")
         req(input$availableComparisons)
         shinyjs::enable("selectComparisons")
       })
@@ -180,7 +180,8 @@ metaAnalysisMS <- function(id, tData) {
       })
       
       # run the meta analysis!
-      observeEvent(input$runAnalysis, {
+      #observeEvent(input$runAnalysis, {
+      shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
         sIds <- getIds(vals$selectedHdrf)
@@ -382,15 +383,15 @@ metaAnalysisMS <- function(id, tData) {
         filename = function() {
           paste0("Forest plot - ",
                  metaRes$metaOutput$compound.symbol[metaRes$metaOutput$id == input$plotGene],
-                 ".png")
+                 ".svg")
         },
         content = function(file) {
           height <- 200 + 19 * nrow(metaRes$data[[input$plotGene]])
-          png(file, width = 1024, height = height)
+          svg(file, width = 1024/72, height = height/72)
           print(metaRes$plot)
           dev.off()
         },
-        contentType = "image/png"
+        contentType = "image/svg+xml"
       )
       
       output$saveResult <- downloadHandler(

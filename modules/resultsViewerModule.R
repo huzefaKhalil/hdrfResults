@@ -258,9 +258,15 @@ resultsViewerMS <- function(id, tData) {
       #############
       # When the user presses the "View Results" Button, gathering all the actions here so as to get the progress bar
       #############
-      observeEvent(input$runAnalysis, {
+      #observeEvent({req(input$runAnalysis, vals$selectedHdrf, input$genes)}, {
+      shinyjs::onclick("runAnalysis", {
+        #browser()
+        #shinyjs::reset("runAnalysis")
         shinyjs::disable("runAnalysis")
         shinyjs::disable("downloadData")
+        
+        # if (is.null(vals$selectedHdrf))
+        #   return(NULL)
         
         tryCatch({
           withProgress({
@@ -538,27 +544,28 @@ resultsViewerMS <- function(id, tData) {
       # code to save the plots
       output$saveCurrent <- downloadHandler(
         filename = function() {
-          paste0("Forest plot - ", input$plotGene, ".png")
+          paste0("Forest plot - ", input$plotGene, ".svg")
         },
         content = function(file) {
           height <- 200 + 19 * length(selectedData$heatmapr$matrix$cols)
-          png(file, width = 1024, height = height)
+          svg(file, width = 1024/72, height = height/72)
           print(selectedData$forestPlots[[input$plotGene]])
           dev.off()
         },
-        contentType = "image/png"
+        contentType = "image/svg+xml"
       )
       
       output$saveAll <- downloadHandler(
         filename = "ForestPlots.zip",
         content = function(file) {
+          browser()
           dr <- tempdir()
           height <-
             200 + 19 * length(selectedData$heatmapr$matrix$cols)
           fns <- Map(function(p, np) {
-            fn <- paste0(dr, "/", np, ".png")
-            png(fn, width = 1024, height = height)
-            print(selectedData$forestPlots[[input$plotGene]])
+            fn <- paste0(dr, "/", np, ".svg")
+            svg(fn, width = 1024/72, height = height/72)
+            print(p)
             dev.off()
             return(fn)
           },

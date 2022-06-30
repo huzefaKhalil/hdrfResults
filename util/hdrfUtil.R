@@ -42,7 +42,7 @@ populateUI <- function(session, tData) {
     session,
     inputId = "region",
     choices = getRegion(tData$hdrf),
-    selected = c("HPC", "vHPC")
+    selected = getRegion(tData$hdrf)
   )
   
   updateCheckboxGroupInput(

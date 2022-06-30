@@ -2,6 +2,8 @@ resultsDownloaderUI <- function(id) {
   ns <- NS(id)
   
   fluidPage(
+    shinyjs::useShinyjs(),
+    
     titlePanel(title = "Data Downloader", windowTitle = "Data Downloader"),
     box(
       width = 12,

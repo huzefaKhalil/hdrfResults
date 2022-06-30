@@ -6,6 +6,8 @@ resultsViewerUI <- function(id) {
   ns <- NS(id)
   
   fluidPage(
+    shinyjs::useShinyjs(),
+    
     titlePanel(title = "HDRF Gene Explorer", windowTitle = "HDRF Gene Explorer"),
     box(
       width = 12,

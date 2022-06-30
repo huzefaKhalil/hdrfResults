@@ -2,6 +2,8 @@ rrhoUI <- function(id) {
   ns <- NS(id)
   
   fluidPage(
+    shinyjs::useShinyjs(),
+    
     titlePanel(title = "Rank Rank Hypergeometric Overlap", windowTitle = "RRHO"),
     box(
       width = 12,
