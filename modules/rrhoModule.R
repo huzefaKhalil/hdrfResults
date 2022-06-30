@@ -177,15 +177,17 @@ rrhoMS <- function(id, tData) {
           shinyjs::enable("runAnalysis")
       })
       
-      observeEvent(input$runAnalysis, {
+      #observeEvent(input$runAnalysis, {
+      shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
-        
+
         tryCatch({
           withProgress({
             
             incProgress(0.1, detail = "Fetching data")
             
-            #sIds <- getIds(vals$selectedHdrf)
+            sIds <- getIds(vals$selectedHdrf)
+            sIds <- getComparisonById(tData$hdrf, sIds)
             
             # get selected data
             selectedData$sData <-

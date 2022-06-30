@@ -96,9 +96,9 @@ metaAnalysisMS <- function(id, tData) {
       #* This code is for selecting comparisons and unselecting them
       #****************************************************
       
-      # enable button to select comparison
+      #enable button to select comparison
       observe({
-        shinyjs::disable("selectComparisons")
+        shinyjs::disable(id = "selectComparisons")
         req(input$availableComparisons)
         shinyjs::enable("selectComparisons")
       })
@@ -180,7 +180,8 @@ metaAnalysisMS <- function(id, tData) {
       })
       
       # run the meta analysis!
-      observeEvent(input$runAnalysis, {
+      #observeEvent(input$runAnalysis, {
+      shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
         sIds <- getIds(vals$selectedHdrf)
