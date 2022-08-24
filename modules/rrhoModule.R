@@ -20,6 +20,7 @@ rrhoMS <- function(id, tData) {
         incProgress(0.8, message = "Loading...")
         
       })
+
       
       # this method updates the comparisons which are available to the user
       updateSelection <- function() {
@@ -350,7 +351,7 @@ rrhoMS <- function(id, tData) {
         },
         contentType = "text/csv"
       )
-      
+
     }
   )
 }

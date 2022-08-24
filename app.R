@@ -55,7 +55,7 @@ ui <- dashboardPage(
     )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic
 server <- function(input, output) {
     # load the data
     tData <- loadData()
