@@ -4,7 +4,7 @@
 #########################################################
 
 # These set up the initial check boxes
-speciesControl <- function(id) {
+speciesControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Species"),
@@ -14,14 +14,15 @@ speciesControl <- function(id) {
       checkboxGroupInput(
         inputId = ns("species"),
         label = NULL,
-        choices = NULL,
+        choices = tools::toTitleCase(getSpecies(tData$hdrf)),
+        selected = tools::toTitleCase(getSpecies(tData$hdrf)),
         inline = FALSE
       )
     )
   )
 }
 
-sexControl <- function(id) {
+sexControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Sex"),
@@ -31,55 +32,16 @@ sexControl <- function(id) {
       checkboxGroupInput(
         inputId = ns("sex"),
         label = NULL,
-        choices = NULL,
+        choices = tools::toTitleCase(getSex(tData$hdrf)),
+        selected = "Male",
         inline = FALSE
       )
     )
   )
 }
 
-speciesSexControl <- function(id) {
-  ns <- NS(id)
-  list(
-    h4("Species"),
-    tags$div(
-      align = "left",
-      class = 'multicol1',
-      checkboxGroupInput(
-        inputId = ns("species"),
-        label = NULL,
-        choices = NULL,
-        inline = FALSE
-      ),
-      h4("Sex"),
-      checkboxGroupInput(
-        inputId = ns("sex"),
-        label = NULL,
-        choices = NULL,
-        inline = FALSE
-      )
-    )
-  )
-}
 
-experimentControl <- function(id) {
-  ns <- NS(id)
-  list(
-    h4("Experiment"),
-    tags$div(
-      align = "left",
-      class = 'multicol2',
-      checkboxGroupInput(
-        inputId = ns("experiment"),
-        label = NULL,
-        choices = NULL,
-        inline = FALSE
-      )
-    )
-  )
-}
-
-modelsControl <- function(id) {
+modelsControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Models"),
@@ -89,63 +51,63 @@ modelsControl <- function(id) {
       checkboxGroupInput(
         inputId = ns("model"),
         label = NULL,
-        choices = NULL,
-        selected = NULL,
+        choices = getModel(tData$hdrf),
+        selected = getModel(tData$hdrf),
         inline = FALSE
       )
-    )
+    ),
     # Cannot use this because we are updating the choices server side...
     # ,
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "GRov",
-    #   title = "GRov",
-    #   content = paste("Mice with Glucocorticoid Receptor Overexpression.",
-    #                   "Includes mice with Life-time GRov (LTGRov) and",
-    #                   "Early-life GRov (ELGRov).")
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "bHR-bLR",
-    #   title = "bHR-bLR",
-    #   content = paste("Selectively bred rat line, bred for low (bLR) and high (bHR) locomoter activity.",
-    #                   "Experiments also includes comparisons between bHR, bLR and outbreds (bIR).")
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "FSL",
-    #   title = "FSL",
-    #   content = "Selectively bred rat line, Flinder\\'s Sensitive (FSL) and Flinder\\'s Resistant (FRL)."
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "Cort",
-    #   title = "Cort",
-    #   content = "Mice with CORT stress treatment."
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "CSDS",
-    #   title = "CSDS",
-    #   content = paste("Mice with Chronic Social Defeat Stress. In most experiments, these are",
-    #                   "categorized as either Susceptible or Reslient and then compared with Controls.")
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "Enrichment",
-    #   title = "Environmental Enrichment",
-    #   content = paste("Mice with either environmentally enrichmed housing or standard housing.")
-    # ),
-    # choicePopover(
-    #   id = ns("model"),
-    #   choice = "BDNF",
-    #   title = "BDNF",
-    #   content = "BDNF Val66Met"
-    # )
+    choicePopover(
+      id = ns("model"),
+      choice = "GRov",
+      title = "GRov",
+      content = paste("Mice with Glucocorticoid Receptor Overexpression.",
+                      "Includes mice with Life-time GRov (LTGRov) and",
+                      "Early-life GRov (ELGRov).")
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "bHR-bLR",
+      title = "bHR-bLR",
+      content = paste("Selectively bred rat line, bred for low (bLR) and high (bHR) locomoter activity.",
+                      "Experiments also includes comparisons between bHR, bLR and outbreds (bIR).")
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "FSL",
+      title = "FSL",
+      content = "Selectively bred rat line, Flinder\\'s Sensitive (FSL) and Flinder\\'s Resistant (FRL)."
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "Cort",
+      title = "Cort",
+      content = "Mice with CORT stress treatment."
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "CSDS",
+      title = "CSDS",
+      content = paste("Mice with Chronic Social Defeat Stress. In most experiments, these are",
+                      "categorized as either Susceptible or Reslient and then compared with Controls.")
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "Enrichment",
+      title = "Environmental Enrichment",
+      content = paste("Mice with either environmentally enrichmed housing or standard housing.")
+    ),
+    choicePopover(
+      id = ns("model"),
+      choice = "BDNF",
+      title = "BDNF",
+      content = "BDNF Val66Met"
+    )
   )
 }
 
-regionsControl <- function(id) {
+regionsControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Brain Region"),
@@ -156,14 +118,14 @@ regionsControl <- function(id) {
         inputId = ns("region"),
         label = NULL,
         inline = FALSE,
-        choices = NULL,
-        selected = NULL
+        choices = getRegion(tData$hdrf),
+        selected = getRegion(tData$hdrf)
       )
     )
   )
 }
 
-timepointControl <- function(id) {
+timepointControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Timepoints"),
@@ -173,15 +135,15 @@ timepointControl <- function(id) {
       checkboxGroupInput(
         inputId = ns("timepoint"),
         label = NULL,
-        choices = NULL,
-        selected = NULL,
+        choices = getTimepoint(tData$hdrf),
+        selected = "None",
         inline = FALSE
       )
     )
   )
 }
 
-treatmentControl <- function(id) {
+treatmentControl <- function(id, tData) {
   ns <- NS(id)
   list(
     h4("Drug Treatment"),
@@ -192,8 +154,8 @@ treatmentControl <- function(id) {
         inputId = ns("treatment"),
         label = NULL,
         inline = FALSE,
-        choices = NULL,
-        selected = NULL
+        choices = getTreatment(tData$hdrf),
+        selected = "None"
       )
     )
   )
@@ -204,7 +166,7 @@ treatmentControl <- function(id) {
 ############################################
 
 # This generates the first row with all the check boxes
-selectDataRow <- function(id) {
+selectDataRow <- function(id, tData) {
   ns <- NS(id)   # don't need it here...
   tagList(
     #column(width = 1, speciesControl),
@@ -212,17 +174,17 @@ selectDataRow <- function(id) {
     #column(width = 1, sexControl),
     
     #column(width = 1, speciesSexHousingControl),
-    column(width = 2, speciesControl(id), sexControl(id)),
+    column(width = 2, speciesControl(id, tData), sexControl(id, tData)),
     
     #column(width = 3, experimentControl),
     
-    column(width = 2, modelsControl(id)),
+    column(width = 2, modelsControl(id, tData)),
     
-    column(width = 2, regionsControl(id)),
+    column(width = 2, regionsControl(id, tData)),
     
-    column(width = 3, treatmentControl(id)),
+    column(width = 3, treatmentControl(id, tData)),
     
-    column(width = 3, timepointControl(id))
+    column(width = 3, timepointControl(id, tData))
   )
 }
 
@@ -316,7 +278,7 @@ selectComparisonRow <- function(id, selectAll = TRUE, moduleText = "results") {
 }
 
 # this generates the gene selector boxes
-selectGenesRow <- function(id) {
+selectGenesRow <- function(id, tData, maxGenes) {
   ns <- NS(id)
   tagList(
     column(

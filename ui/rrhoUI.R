@@ -1,4 +1,5 @@
-rrhoUI <- function(id) {
+
+rrhoUI <- function(id, tData) {
   ns <- NS(id)
   
   fluidPage(
@@ -15,7 +16,7 @@ rrhoUI <- function(id) {
       multiColTweak,
       
       # Row to display the input check boxes
-      fluidRow(selectDataRow(id)),
+      fluidRow(selectDataRow(id, tData)),
       
       # Row to display the input for comparisons
       fluidRow(selectComparisonRow(id, selectAll = FALSE, moduleText = "rrho")),

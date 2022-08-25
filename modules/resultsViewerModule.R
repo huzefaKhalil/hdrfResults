@@ -1,31 +1,38 @@
 
-
 resultsViewerMS <- function(id, tData) {
   moduleServer(
     
     id,
-               
+    
     function(input, output, session) {
-                 # load the data
+      
       withProgress({
-        incProgress(0.1, message = "Loading...")
-        #tData <- loadData()
+        incProgress(0.2, message = "Loading...")
         
-        vals <- reactiveValues(selectedHdrf = NULL,
-                               availableHdrf = NULL)
-        selectedData <- reactiveValues()
+        if (is.null(input$genes)) {
+          updateSelectizeInput(
+            session,
+            inputId = "genes",
+            choices = setNames(tData$hdrf@ids$id, tData$hdrf@ids$compound.symbol),
+            server = TRUE
+          )
+        }
         
-        populateUI(session, tData)
+        incProgress(0.6, message = "Loading...")
         
-        incProgress(0.3, message = "Loading...")
+        if (input$pathways == "") {
+          updateSelectizeInput(
+            session,
+            inputId = "pathways",
+            choices = c("", names(tData$pathways)),
+            selected = NULL,
+            server = TRUE
+          )
+        }
         
-        Sys.sleep(0.2)
-        incProgress(0.7, message = "Loading...")
-        
-        Sys.sleep(0.2)
         incProgress(1, message = "Loading...")
       })
-      
+
       # this method updates the comparisons which are available to the user
       updateSelection <- function() {
         req(input$treatment)
@@ -45,14 +52,14 @@ resultsViewerMS <- function(id, tData) {
         )
         
         # set the available comparisons
-        if (!is.null(vals$selectedHdrf)) {
-          ids <- getIds(vals$selectedHdrf)
+        if (!is.null(resVals$selectedHdrf)) {
+          ids <- getIds(resVals$selectedHdrf)
           ids <- gsub("^-", "", ids)
           hd <- removeComparison(hd, ids)
         }
         
         # set the available Hdrf
-        vals$availableHdrf <- hd
+        resVals$availableHdrf <- hd
         
         # shinyWidgets::updateMultiInput(session,
         #                   "comparisons",
@@ -64,24 +71,24 @@ resultsViewerMS <- function(id, tData) {
       sComp <- function(sIds) {
         # so, here we have to update both text boxes. These are:
         # input$availableComparisons and input$selectedComparisons
-        # also have to update vals$availableHdrf and vals$selectedHdrf
+        # also have to update resVals$availableHdrf and resVals$selectedHdrf
         
         # set the selected hdrf and available hdrf
-        vals$availableHdrf <-
-          removeComparison(vals$availableHdrf,
+        resVals$availableHdrf <-
+          removeComparison(resVals$availableHdrf,
                            sIds)
         
-        if (!is.null(vals$selectedHdrf)) {
-          sIds <- c(sIds, getIds(vals$selectedHdrf))
+        if (!is.null(resVals$selectedHdrf)) {
+          sIds <- c(sIds, getIds(resVals$selectedHdrf))
         }
         
-        vals$selectedHdrf <-
+        resVals$selectedHdrf <-
           getComparisonById(tData$hdrf,
                             sIds)
         
         # now, update the selectInput boxes
-        updateSelectHdrf(session, "availableComparisons", vals$availableHdrf)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+        updateSelectHdrf(session, "availableComparisons", resVals$availableHdrf)
+        updateSelectHdrf(session, "selectedComparisons", resVals$selectedHdrf)
       }
       
       # these check for changes to the selection and updae available comparisons
@@ -132,7 +139,7 @@ resultsViewerMS <- function(id, tData) {
       # enable button to select all comparison
       observe({
         shinyjs::disable("selectAllComparisons")
-        req(vals$availableHdrf)
+        req(resVals$availableHdrf)
         shinyjs::enable("selectAllComparisons")
       })
       
@@ -145,50 +152,50 @@ resultsViewerMS <- function(id, tData) {
       
       # when the button is pressed to select comparisons
       # move the selected comparisons to the other text box
-      observeEvent(input$selectComparisons, {
+      shinyjs::onclick("selectComparisons", {
         # step one, get the ids being selected
         sIds <- input$availableComparisons
         sComp(sIds)
       })
       
-      observeEvent(input$selectAllComparisons, {
+      shinyjs::onclick("selectAllComparisons", {
         # step one, get the ids being selected
-        sIds <- getIds(vals$availableHdrf)
+        sIds <- getIds(resVals$availableHdrf)
         sComp(sIds)
       })
       
-      observeEvent(input$unSelectComparisons, {
+      shinyjs::onclick("unSelectComparisons", {
         # get the ids being moved back
         sIds <- input$selectedComparisons
         
         # now update the selected hdrfs
-        vals$selectedHdrf <-
-          removeComparison(vals$selectedHdrf, sIds)
+        resVals$selectedHdrf <-
+          removeComparison(resVals$selectedHdrf, sIds)
         
         # We don't handles reversed comparisons here... if they are unselected, they will
         # loose their reversed status
         sIds <- gsub("^-", "", sIds)
         
         # now move these to available Ids
-        if (!is.null(vals$availableHdrf))
-          aIds <- c(sIds, getIds(vals$availableHdrf))
+        if (!is.null(resVals$availableHdrf))
+          aIds <- c(sIds, getIds(resVals$availableHdrf))
         else
           aIds <- sIds
         
         # now update the hdrfs
-        vals$availableHdrf <-
+        resVals$availableHdrf <-
           getComparisonById(tData$hdrf, aIds)
         
         # now update the selectInputs
-        updateSelectHdrf(session, "availableComparisons", vals$availableHdrf)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+        updateSelectHdrf(session, "availableComparisons", resVals$availableHdrf)
+        updateSelectHdrf(session, "selectedComparisons", resVals$selectedHdrf)
       })
       
       # reverse the selected comparisons
-      observeEvent(input$reverseComparisons, {
-        vals$selectedHdrf <- reverseComparison(vals$selectedHdrf,
-                                               input$selectedComparisons)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+      shinyjs::onclick("reverseComparisons", {
+        resVals$selectedHdrf <- reverseComparison(resVals$selectedHdrf,
+                                                  input$selectedComparisons)
+        updateSelectHdrf(session, "selectedComparisons", resVals$selectedHdrf)
       })
       
       #****************************************************
@@ -201,13 +208,13 @@ resultsViewerMS <- function(id, tData) {
       
       observe({
         shinyjs::disable("runAnalysis")
-        req(vals$selectedHdrf, input$genes)
+        req(resVals$selectedHdrf, input$genes)
         shinyjs::enable("runAnalysis")
       })
       
       observe({
         shinyjs::disable("downloadData")
-        req(vals$selectedHdrf, input$genes)
+        req(resVals$selectedHdrf, input$genes)
         shinyjs::enable("downloadData")
       })
       
@@ -258,32 +265,32 @@ resultsViewerMS <- function(id, tData) {
       #############
       # When the user presses the "View Results" Button, gathering all the actions here so as to get the progress bar
       #############
-      #observeEvent({req(input$runAnalysis, vals$selectedHdrf, input$genes)}, {
+      #observeEvent({req(input$runAnalysis, resVals$selectedHdrf, input$genes)}, {
       shinyjs::onclick("runAnalysis", {
         #browser()
         #shinyjs::reset("runAnalysis")
         shinyjs::disable("runAnalysis")
         shinyjs::disable("downloadData")
         
-        # if (is.null(vals$selectedHdrf))
+        # if (is.null(resVals$selectedHdrf))
         #   return(NULL)
         
         tryCatch({
           withProgress({
             incProgress(0.1, detail = "Fetching data")
             
-            sIds <- getIds(vals$selectedHdrf)
+            sIds <- getIds(resVals$selectedHdrf)
             
             # make sure there are no duplicated compound symbols here
             sGenes <-
               input$genes[!duplicated(tData$hdrf@ids[input$genes]$compound.symbol)]
             
             # get selected data
-            selectedData$sData <-
+            resSelectedData$sData <-
               isolate({
                 
                 tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-                theData <- flattenDge(vals$selectedHdrf, geneId = sGenes, conn = tempConn)
+                theData <- flattenDge(resVals$selectedHdrf, geneId = sGenes, conn = tempConn)
                 DBI::dbDisconnect(tempConn)
                 
                 theData
@@ -292,11 +299,11 @@ resultsViewerMS <- function(id, tData) {
             incProgress(0.2, detail = "Fetching data")
             
             # get the columns for all comparisons
-            selectedData$pvalData <-
+            resSelectedData$pvalData <-
               isolate({
                 
                 tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-
+                
                 theData <- getColumnData(
                   tData$hdrf,
                   column = "pvalue",
@@ -311,7 +318,7 @@ resultsViewerMS <- function(id, tData) {
             
             incProgress(0.3, detail = "Fetching data")
             
-            selectedData$estimateData <-
+            resSelectedData$estimateData <-
               isolate({
                 
                 tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
@@ -331,9 +338,9 @@ resultsViewerMS <- function(id, tData) {
             incProgress(0.6, detail = "Plotting data")
             
             # make the forest plots
-            selectedData$forestPlots <- isolate(
+            resSelectedData$forestPlots <- isolate(
               smoothForest(
-                selectedData$sData,
+                resSelectedData$sData,
                 metaStatistic = TRUE,
                 includeModel = TRUE,
                 includeName = TRUE,
@@ -351,16 +358,16 @@ resultsViewerMS <- function(id, tData) {
             
             incProgress(0.8, detail = "Plottting data")
             
-            selectedData$heatmapr <-
-              isolate(heatmap.3(selectedData$sData, ids = tData$hdrf@ids))
+            resSelectedData$heatmapr <-
+              isolate(heatmap.3(resSelectedData$sData, ids = tData$hdrf@ids))
             
             # set the gene to plot
             updateSelectizeInput(
               session,
               inputId = "plotGene",
-              choices = selectedData$heatmapr$matrix$rows,
-              selected = selectedData$heatmapr$matrix$rows[1],
-              server = TRUE
+              choices = resSelectedData$heatmapr$matrix$rows,
+              selected = resSelectedData$heatmapr$matrix$rows[1],
+              server = FALSE
             )
             
           }, message = "HDRF Results")
@@ -377,21 +384,21 @@ resultsViewerMS <- function(id, tData) {
       output$downloadData <- downloadHandler(
         filename = "hdrfDataDownload.csv",
         content = function(file) {
-
+          
           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-          tData <- flattenDge(vals$selectedHdrf, geneId = input$genes, conn = tempConn)
+          tData <- flattenDge(resVals$selectedHdrf, geneId = input$genes, conn = tempConn)
           DBI::dbDisconnect(tempConn)
-
+          
           data.table::fwrite(tData[,-c("id", "comparisonID")], file)
         }
       )
       
       # render the heatmap
       output$heatmap <- renderPlotly({
-        req(selectedData$heatmapr)
+        req(resSelectedData$heatmapr)
         
         heatmaply::heatmaply(
-          selectedData$heatmapr,
+          resSelectedData$heatmapr,
           plot_method = "plotly",
           showticklabels = c(FALSE, TRUE),
           margins = c(0, 50, NA, 0)
@@ -406,27 +413,27 @@ resultsViewerMS <- function(id, tData) {
       
       # this checks for a click on the heatmap and changes the forest plot to that gene
       observeEvent(clickedPoint(), {
-        gene <- selectedData$heatmapr$matrix$rows[clickedPoint()$y]
+        gene <- resSelectedData$heatmapr$matrix$rows[clickedPoint()$y]
         
         updateSelectizeInput(
           session,
           inputId = "plotGene",
-          choices = selectedData$heatmapr$matrix$rows,
-          selected = selectedData$heatmapr$matrix$rows[clickedPoint()$y],
-          server = TRUE
+          choices = resSelectedData$heatmapr$matrix$rows,
+          selected = resSelectedData$heatmapr$matrix$rows[clickedPoint()$y],
+          server = FALSE
         )
       })
       
       # when a point is clicked.. print the experiment info
       output$colInfo <- renderUI({
-        req(selectedData$sData, clickedPoint())
+        req(resSelectedData$sData, clickedPoint())
         
         comparison <-
-          selectedData$heatmapr$matrix$cols[clickedPoint()$x]
+          resSelectedData$heatmapr$matrix$cols[clickedPoint()$x]
         rowsToGet <-
-          grepl(comparison, selectedData$sData$comparisonID)
+          grepl(comparison, resSelectedData$sData$comparisonID)
         
-        info <- selectedData$sData[rowsToGet,]
+        info <- resSelectedData$sData[rowsToGet,]
         HTML(
           paste0(
             "Experiment: ",
@@ -446,7 +453,7 @@ resultsViewerMS <- function(id, tData) {
             info$treatment[1],
             "<br>",
             "Highlighted Gene: ",
-            selectedData$heatmapr$matrix$rows[clickedPoint()$y],
+            resSelectedData$heatmapr$matrix$rows[clickedPoint()$y],
             "<br>"
           )
         )
@@ -454,17 +461,17 @@ resultsViewerMS <- function(id, tData) {
       
       # print the volcano plot
       output$volcano <- renderPlotly({
-        req(selectedData$pvalData,
-            selectedData$estimateData,
+        req(resSelectedData$pvalData,
+            resSelectedData$estimateData,
             clickedPoint())
         comparison <-
-          selectedData$heatmapr$matrix$cols[clickedPoint()$x]
+          resSelectedData$heatmapr$matrix$cols[clickedPoint()$x]
         gene <-
-          selectedData$heatmapr$matrix$rows[clickedPoint()$y]
+          resSelectedData$heatmapr$matrix$rows[clickedPoint()$y]
         
         # let's get the data
-        pv <- selectedData$pvalData
-        lfc <- selectedData$estimateData
+        pv <- resSelectedData$pvalData
+        lfc <- resSelectedData$estimateData
         
         plotData <- data.frame(
           symbol = pv[["symbol"]],
@@ -474,7 +481,7 @@ resultsViewerMS <- function(id, tData) {
         plotData <- na.omit(plotData)
         plotData$color <-
           ifelse(
-            !(plotData$symbol %in% selectedData$heatmapr$matrix$rows),
+            !(plotData$symbol %in% resSelectedData$heatmapr$matrix$rows),
             "black",
             ifelse(gene != plotData$symbol, "green", "red")
           )
@@ -530,13 +537,13 @@ resultsViewerMS <- function(id, tData) {
       # change the plot when the plot counter moves
       observeEvent(input$plotGene, {
         output$forest <-renderPlot({
-          req(selectedData$forestPlots)
+          req(resSelectedData$forestPlots)
           
-          selectedData$forestPlots[[input$plotGene]]
+          resSelectedData$forestPlots[[input$plotGene]]
         },
         height = function() {
-          req(selectedData$heatmapr)
-          return(200 + 19 * length(selectedData$heatmapr$matrix$cols))
+          req(resSelectedData$heatmapr)
+          return(200 + 19 * length(resSelectedData$heatmapr$matrix$cols))
         }
         )
       })
@@ -547,9 +554,9 @@ resultsViewerMS <- function(id, tData) {
           paste0("Forest plot - ", input$plotGene, ".svg")
         },
         content = function(file) {
-          height <- 200 + 19 * length(selectedData$heatmapr$matrix$cols)
+          height <- 200 + 19 * length(resSelectedData$heatmapr$matrix$cols)
           svg(file, width = 1024/72, height = height/72)
-          print(selectedData$forestPlots[[input$plotGene]])
+          print(resSelectedData$forestPlots[[input$plotGene]])
           dev.off()
         },
         contentType = "image/svg+xml"
@@ -561,7 +568,7 @@ resultsViewerMS <- function(id, tData) {
           browser()
           dr <- tempdir()
           height <-
-            200 + 19 * length(selectedData$heatmapr$matrix$cols)
+            200 + 19 * length(resSelectedData$heatmapr$matrix$cols)
           fns <- Map(function(p, np) {
             fn <- paste0(dr, "/", np, ".svg")
             svg(fn, width = 1024/72, height = height/72)
@@ -569,8 +576,8 @@ resultsViewerMS <- function(id, tData) {
             dev.off()
             return(fn)
           },
-          selectedData$forestPlots,
-          names(selectedData$forestPlots))
+          resSelectedData$forestPlots,
+          names(resSelectedData$forestPlots))
           
           zip(zipfile = file,
               files = fns,

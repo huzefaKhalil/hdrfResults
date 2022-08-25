@@ -14,66 +14,66 @@ loadData <- function() {
   return(list("conn" = conn, "hdrf" = hdrf, "pathways" = pathways))
 }
 
-# populates the UI, namesly the checkboxes and selectInput vals.
-populateUI <- function(session, tData) {
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "species",
-    choices = tools::toTitleCase(getSpecies(tData$hdrf)),
-    selected = tools::toTitleCase(getSpecies(tData$hdrf))
-  )
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "sex",
-    choices = tools::toTitleCase(getSex(tData$hdrf)),
-    selected = "Male"
-  )
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "model",
-    choices = getModel(tData$hdrf),
-    selected = getModel(tData$hdrf)
-  )
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "region",
-    choices = getRegion(tData$hdrf),
-    selected = getRegion(tData$hdrf)
-  )
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "timepoint",
-    choices = getTimepoint(tData$hdrf),
-    selected = "None"
-  )
-  
-  updateCheckboxGroupInput(
-    session,
-    inputId = "treatment",
-    choices = getTreatment(tData$hdrf),
-    selected = "None"
-  )
-  
-  updateSelectizeInput(
-    session,
-    inputId = "genes",
-    choices = setNames(tData$hdrf@ids$id, tData$hdrf@ids$compound.symbol),
-    server = TRUE
-  )
-  
-  updateSelectizeInput(
-    session,
-    inputId = "pathways",
-    choices = c("", names(tData$pathways)),
-    selected = NULL
-    #server = TRUE
-  )
-}
+# # populates the UI, namesly the checkboxes and selectInput vals.
+# populateUI <- function(session, tData) {
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "species",
+#     choices = tools::toTitleCase(getSpecies(tData$hdrf)),
+#     selected = tools::toTitleCase(getSpecies(tData$hdrf))
+#   )
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "sex",
+#     choices = tools::toTitleCase(getSex(tData$hdrf)),
+#     selected = "Male"
+#   )
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "model",
+#     choices = getModel(tData$hdrf),
+#     selected = getModel(tData$hdrf)
+#   )
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "region",
+#     choices = getRegion(tData$hdrf),
+#     selected = getRegion(tData$hdrf)
+#   )
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "timepoint",
+#     choices = getTimepoint(tData$hdrf),
+#     selected = "None"
+#   )
+#   
+#   updateCheckboxGroupInput(
+#     session,
+#     inputId = "treatment",
+#     choices = getTreatment(tData$hdrf),
+#     selected = "None"
+#   )
+#   
+#   updateSelectizeInput(
+#     session,
+#     inputId = "genes",
+#     choices = setNames(tData$hdrf@ids$id, tData$hdrf@ids$compound.symbol),
+#     server = TRUE
+#   )
+#   
+#   updateSelectizeInput(
+#     session,
+#     inputId = "pathways",
+#     choices = c("", names(tData$pathways)),
+#     selected = NULL
+#     #server = TRUE
+#   )
+# }
 
 # This method takes comparisons and produce a printable list similar to 
 comparisonToList <- function(comp) {
