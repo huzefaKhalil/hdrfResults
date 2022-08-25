@@ -5,26 +5,8 @@ metaAnalysisMS <- function(id, tData) {
     id,
     
     function(input, output, session) {
-      # load the data
-      
-      withProgress({
-        incProgress(0.1, message = "Loading...")
-        
-        vals <- reactiveValues(selectedHdrf = NULL,
-                               availableHdrf = NULL)
-        selectedData <- reactiveValues()
-        metaRes <- reactiveValues()
-        
-        incProgress(0.4, message = "Loading...")
-        
-        # save directory for the meta analysis
-        saveDir <- file.path("resources/metaRes")
-        
-        populateUI(session, tData)
-        
-        incProgress(0.8, message = "Loading...")
-        
-      })
+      # save directory for the meta analysis
+      saveDir <- file.path("resources/metaRes")
       
       # this method updates the comparisons which are available to the user
       updateSelection <- function() {
@@ -45,14 +27,14 @@ metaAnalysisMS <- function(id, tData) {
         )
         
         # set the available comparisons
-        if (!is.null(vals$selectedHdrf)) {
-          ids <- getIds(vals$selectedHdrf)
+        if (!is.null(metaVals$selectedHdrf)) {
+          ids <- getIds(metaVals$selectedHdrf)
           ids <- gsub("^-", "", ids)
           hd <- removeComparison(hd, ids)
         }
         
         # set the available Hdrf
-        vals$availableHdrf <- hd
+        metaVals$availableHdrf <- hd
         
         # shinyWidgets::updateMultiInput(session,
         #                   "comparisons",
@@ -64,22 +46,22 @@ metaAnalysisMS <- function(id, tData) {
       sComp <- function(sIds) {
         # so, here we have to update both text boxes. These are:
         # input$availableComparisons and input$selectedComparisons
-        # also have to update vals$availableHdrf and vals$selectedHdrf
+        # also have to update metaVals$availableHdrf and metaVals$selectedHdrf
         
         # set the selected hdrf and available hdrf
-        vals$availableHdrf <- removeComparison(vals$availableHdrf,
-                                               sIds)
+        metaVals$availableHdrf <- removeComparison(metaVals$availableHdrf,
+                                                   sIds)
         
-        if (!is.null(vals$selectedHdrf)) {
-          sIds <- c(sIds, getIds(vals$selectedHdrf))
+        if (!is.null(metaVals$selectedHdrf)) {
+          sIds <- c(sIds, getIds(metaVals$selectedHdrf))
         }
         
-        vals$selectedHdrf <- getComparisonById(tData$hdrf,
-                                               sIds)
+        metaVals$selectedHdrf <- getComparisonById(tData$hdrf,
+                                                   sIds)
         
         # now, update the selectInput boxes
-        updateSelectHdrf(session, "availableComparisons", vals$availableHdrf)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+        updateSelectHdrf(session, "availableComparisons", metaVals$availableHdrf)
+        updateSelectHdrf(session, "selectedComparisons", metaVals$selectedHdrf)
       }
       
       # The logic to select comparisons.
@@ -113,7 +95,7 @@ metaAnalysisMS <- function(id, tData) {
       # enable button to select all comparison
       observe({
         shinyjs::disable("selectAllComparisons")
-        req(vals$availableHdrf)
+        req(metaVals$availableHdrf)
         shinyjs::enable("selectAllComparisons")
       })
       
@@ -126,48 +108,48 @@ metaAnalysisMS <- function(id, tData) {
       
       # when the button is pressed to select comparisons
       # move the selected comparisons to the other text box
-      observeEvent(input$selectComparisons, {
+      shinyjs::onclick("selectComparisons", {
         # step one, get the ids being selected
         sIds <- input$availableComparisons
         sComp(sIds)
       })
       
-      observeEvent(input$selectAllComparisons, {
+      shinyjs::onclick("selectAllComparisons", {
         # step one, get the ids being selected
-        sIds <- getIds(vals$availableHdrf)
+        sIds <- getIds(metaVals$availableHdrf)
         sComp(sIds)
       })
       
-      observeEvent(input$unSelectComparisons, {
+      shinyjs::onclick("unSelectComparisons", {
         # get the ids being moved back
         sIds <- input$selectedComparisons
         
         # now update the selected hdrfs
-        vals$selectedHdrf <- removeComparison(vals$selectedHdrf, sIds)
+        metaVals$selectedHdrf <- removeComparison(metaVals$selectedHdrf, sIds)
         
         # We don't handles reversed comparisons here... if they are unselected, they will
         # loose their reversed status
         sIds <- gsub("^-", "", sIds)
         
         # now move these to available Ids
-        if (!is.null(vals$availableHdrf))
-          aIds <- c(sIds, getIds(vals$availableHdrf))
+        if (!is.null(metaVals$availableHdrf))
+          aIds <- c(sIds, getIds(metaVals$availableHdrf))
         else
           aIds <- sIds
         
         # now update the hdrfs
-        vals$availableHdrf <- getComparisonById(tData$hdrf, aIds)
+        metaVals$availableHdrf <- getComparisonById(tData$hdrf, aIds)
         
         # now update the selectInputs
-        updateSelectHdrf(session, "availableComparisons", vals$availableHdrf)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+        updateSelectHdrf(session, "availableComparisons", metaVals$availableHdrf)
+        updateSelectHdrf(session, "selectedComparisons", metaVals$selectedHdrf)
       })
       
       # reverse the selected comparisons
-      observeEvent(input$reverseComparisons, {
-        vals$selectedHdrf <- reverseComparison(vals$selectedHdrf,
-                                               input$selectedComparisons)
-        updateSelectHdrf(session, "selectedComparisons", vals$selectedHdrf)
+      shinyjs::onclick("reverseComparisons", {
+        metaVals$selectedHdrf <- reverseComparison(metaVals$selectedHdrf,
+                                                   input$selectedComparisons)
+        updateSelectHdrf(session, "selectedComparisons", metaVals$selectedHdrf)
       })
       
       #****************************************************
@@ -175,7 +157,7 @@ metaAnalysisMS <- function(id, tData) {
       # now we get to the part which runs the meta-analysis
       observe({
         shinyjs::disable("runAnalysis")
-        req(vals$selectedHdrf)
+        req(metaVals$selectedHdrf)
         shinyjs::enable("runAnalysis")
       })
       
@@ -184,7 +166,7 @@ metaAnalysisMS <- function(id, tData) {
       shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
-        sIds <- getIds(vals$selectedHdrf)
+        sIds <- getIds(metaVals$selectedHdrf)
         nSelected <- length(sIds)
         
         # 1. Check if the meta-analysis exists
@@ -208,7 +190,7 @@ metaAnalysisMS <- function(id, tData) {
           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
           theData <- flattenDge(sIds, conn = tempConn)
           DBI::dbDisconnect(tempConn)
-
+          
           # first, split it by id
           theData <- split(theData, by = "id")
           
@@ -405,5 +387,5 @@ metaAnalysisMS <- function(id, tData) {
       
     }
   )
-    
+  
 }

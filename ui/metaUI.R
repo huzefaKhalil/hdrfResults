@@ -1,5 +1,5 @@
 
-metaAnalysisUI <- function(id) {
+metaAnalysisUI <- function(id, tData) {
   ns <- NS(id)
   
   fluidPage(
@@ -16,7 +16,7 @@ metaAnalysisUI <- function(id) {
       multiColTweak,
       
       # Row to display the input check boxes
-      fluidRow(selectDataRow(id)),
+      fluidRow(selectDataRow(id, tData)),
       
       # Row to display the input for comparisons
       fluidRow(selectComparisonRow(id, moduleText = "meta")),

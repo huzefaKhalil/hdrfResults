@@ -32,57 +32,78 @@ source("modules/resultsDownloaderModule.R", local = TRUE)
 source("modules/metaModule.R", local = TRUE)
 source("modules/rrhoModule.R", local = TRUE)
 
+tData <- loadData()
+
 # Define UI for application that draws a histogram
 ui <- dashboardPage(
-    skin = "purple",
+  skin = "purple",
+  
+  # Application title
+  dashboardHeader(title = "HDRF Gene Explorer", titleWidth = "320px"),
+  
+  # setup the menu
+  dashboardSidebar(sidebarMenuOutput("menu")),
+  
+  dashboardBody(
     
-    # Application title
-    dashboardHeader(title = "HDRF Gene Explorer", titleWidth = "320px"),
-    
-    # setup the menu
-    dashboardSidebar(sidebarMenuOutput("menu")),
-    
-    dashboardBody(
-        
-        tabItems(
-            tabItem(tabName = "mInfo", animalModelsUI(id = "animalModelInfo")),
-            tabItem(tabName = "sInfo", statModelUI(id = "statModelInfo")),
-            tabItem(tabName = "viewer", resultsViewerUI(id = "viewer")),
-            tabItem(tabName = "downloader", resultsDownloaderUI(id = "downloader")),
-            tabItem(tabName = "meta", metaAnalysisUI(id = "meta")),
-            tabItem(tabName = "rrho", rrhoUI(id = "rrho"))
-        )
+    tabItems(
+      tabItem(tabName = "mInfo", animalModelsUI(id = "animalModelInfo")),
+      tabItem(tabName = "sInfo", statModelUI(id = "statModelInfo")),
+      tabItem(tabName = "viewer", resultsViewerUI(id = "viewer", tData = tData, maxGenes = maxGenes)),
+      tabItem(tabName = "downloader", resultsDownloaderUI(id = "downloader", tData = tData)),
+      tabItem(tabName = "meta", metaAnalysisUI(id = "meta", tData = tData)),
+      tabItem(tabName = "rrho", rrhoUI(id = "rrho", tData = tData))
     )
+  )
 )
 
 # Define server logic
 server <- function(input, output) {
-    # load the data
-    tData <- loadData()
-    
-    output$menu <- shinydashboard::renderMenu({
-        shinydashboard::sidebarMenu(
-            shinydashboard::menuItem("Animal Models", tabName = "mInfo"),
-            shinydashboard::menuItem("Statistal Methods", tabName = "sInfo"),
-            shinydashboard::menuItem("Results Viewer", tabName = "viewer"),
-            shinydashboard::menuItem("Data Download", tabName = "downloader"),
-            shinydashboard::menuItem("Meta Analysis", tabName = "meta"),
-            shinydashboard::menuItem("RRHO", tabName = "rrho"),
-            id = "tabs"
-        )
-    })
-    
-    observeEvent(input$tabs, {
-        if (input$tabs == "viewer") {
-            resultsViewerMS("viewer", tData = tData)
-        } else if (input$tabs == "downloader") {
-            resultsDownloaderMS("downloader", tData = tData)
-        } else if (input$tabs == "meta") {
-            metaAnalysisMS("meta", tData = tData)
-        } else if (input$tabs == "rrho") {
-            rrhoMS("rrho", tData = tData)
-        }
-    }, ignoreNULL = TRUE, ignoreInit = FALSE)
+  # load the data
+  #tData <- loadData()
+  
+  # all the reactive values used in the modules will be set here.
+  rrhoVals <- reactiveValues(selectedHdrf = NULL,
+                             availableHdrf = NULL)
+  rrhoSelectedData <- reactiveValues()
+  rrhoRes <- reactiveValues()
+  
+  metaVals <- reactiveValues(selectedHdrf = NULL,
+                             availableHdrf = NULL)
+  metaSelectedData <- reactiveValues()
+  metaRes <- reactiveValues()
+  
+  dVals <- reactiveValues(selectedHdrf = NULL,
+                          availableHdrf = NULL)
+  dSelectedData <- reactiveValues()
+  
+  resVals <- reactiveValues(selectedHdrf = NULL,
+                            availableHdrf = NULL)
+  resSelectedData <- reactiveValues()
+  
+  output$menu <- shinydashboard::renderMenu({
+    shinydashboard::sidebarMenu(
+      shinydashboard::menuItem("Animal Models", tabName = "mInfo"),
+      shinydashboard::menuItem("Statistal Methods", tabName = "sInfo"),
+      shinydashboard::menuItem("Results Viewer", tabName = "viewer"),
+      shinydashboard::menuItem("Data Download", tabName = "downloader"),
+      shinydashboard::menuItem("Meta Analysis", tabName = "meta"),
+      shinydashboard::menuItem("RRHO", tabName = "rrho"),
+      id = "tabs"
+    )
+  })
+  
+  observeEvent(input$tabs, {
+    if (input$tabs == "viewer") {
+      resultsViewerMS("viewer", tData = tData)
+    } else if (input$tabs == "downloader") {
+      resultsDownloaderMS("downloader", tData = tData)
+    } else if (input$tabs == "meta") {
+      metaAnalysisMS("meta", tData = tData)
+    } else if (input$tabs == "rrho") {
+      rrhoMS("rrho", tData = tData)
+    }
+  }, ignoreNULL = TRUE, ignoreInit = FALSE)
 }
 
 # Run the application 

@@ -1,8 +1,5 @@
-# settings
-# maximum genes which can be selected
-maxGenes <- 100
 
-resultsViewerUI <- function(id) {
+resultsViewerUI <- function(id, tData, maxGenes = 100) {
   ns <- NS(id)
   
   fluidPage(
@@ -19,13 +16,13 @@ resultsViewerUI <- function(id) {
       multiColTweak,
       
       # Row to display the input check boxes
-      fluidRow(selectDataRow(id)),
+      fluidRow(selectDataRow(id, tData)),
       
       # Row to display the input for comparisons
       fluidRow(selectComparisonRow(id)),
       
       # Row to display the input for genes
-      fluidRow(selectGenesRow(id)),
+      fluidRow(selectGenesRow(id, tData, maxGenes)),
       
       # Row to run the analysis
       fluidRow(
