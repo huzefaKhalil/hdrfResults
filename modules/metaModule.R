@@ -1,3 +1,7 @@
+metaVals <- reactiveValues(selectedHdrf = NULL,
+                           availableHdrf = NULL)
+metaSelectedData <- reactiveValues()
+metaRes <- reactiveValues()
 
 metaAnalysisMS <- function(id, tData) {
   

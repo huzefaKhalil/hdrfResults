@@ -1,4 +1,6 @@
-
+dVals <- reactiveValues(selectedHdrf = NULL,
+                        availableHdrf = NULL)
+dSelectedData <- reactiveValues()
 
 resultsDownloaderMS <- function(id, tData) {
   moduleServer(

@@ -62,25 +62,6 @@ server <- function(input, output) {
   # load the data
   #tData <- loadData()
   
-  # all the reactive values used in the modules will be set here.
-  rrhoVals <- reactiveValues(selectedHdrf = NULL,
-                             availableHdrf = NULL)
-  rrhoSelectedData <- reactiveValues()
-  rrhoRes <- reactiveValues()
-  
-  metaVals <- reactiveValues(selectedHdrf = NULL,
-                             availableHdrf = NULL)
-  metaSelectedData <- reactiveValues()
-  metaRes <- reactiveValues()
-  
-  dVals <- reactiveValues(selectedHdrf = NULL,
-                          availableHdrf = NULL)
-  dSelectedData <- reactiveValues()
-  
-  resVals <- reactiveValues(selectedHdrf = NULL,
-                            availableHdrf = NULL)
-  resSelectedData <- reactiveValues()
-  
   output$menu <- shinydashboard::renderMenu({
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem("Animal Models", tabName = "mInfo"),

@@ -1,3 +1,7 @@
+rrhoVals <- reactiveValues(selectedHdrf = NULL,
+                           availableHdrf = NULL)
+rrhoSelectedData <- reactiveValues()
+rrhoRes <- reactiveValues()
 
 
 rrhoMS <- function(id, tData) {

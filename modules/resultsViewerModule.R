@@ -1,3 +1,6 @@
+resVals <- reactiveValues(selectedHdrf = NULL,
+                          availableHdrf = NULL)
+resSelectedData <- reactiveValues()
 
 resultsViewerMS <- function(id, tData) {
   moduleServer(
