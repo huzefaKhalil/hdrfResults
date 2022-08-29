@@ -61,6 +61,22 @@ ui <- dashboardPage(
 server <- function(input, output) {
   # load the data
   #tData <- loadData()
+  # the reactive Vals for the various modules are defined here and passed to them.
+  resVals <- reactiveValues(selectedHdrf = NULL,
+                            availableHdrf = NULL)
+  resSelectedData <- reactiveValues()
+  
+  rrhoVals <- reactiveValues(selectedHdrf = NULL,
+                             availableHdrf = NULL)
+  rrhoSelectedData <- reactiveValues()
+  rrhoRes <- reactiveValues()
+  
+  dVals <- reactiveValues(selectedHdrf = NULL,
+                          availableHdrf = NULL)
+  
+  metaVals <- reactiveValues(selectedHdrf = NULL,
+                             availableHdrf = NULL)
+  metaRes <- reactiveValues()
   
   output$menu <- shinydashboard::renderMenu({
     shinydashboard::sidebarMenu(
@@ -76,13 +92,13 @@ server <- function(input, output) {
   
   observeEvent(input$tabs, {
     if (input$tabs == "viewer") {
-      resultsViewerMS("viewer", tData = tData)
+      resultsViewerMS("viewer", tData = tData, resVals, resSelectedData)
     } else if (input$tabs == "downloader") {
-      resultsDownloaderMS("downloader", tData = tData)
+      resultsDownloaderMS("downloader", tData = tData, dVals)
     } else if (input$tabs == "meta") {
-      metaAnalysisMS("meta", tData = tData)
+      metaAnalysisMS("meta", tData = tData, metaVals, metaRes)
     } else if (input$tabs == "rrho") {
-      rrhoMS("rrho", tData = tData)
+      rrhoMS("rrho", tData = tData, rrhoVals, rrhoSelectedData, rrhoRes)
     }
   }, ignoreNULL = TRUE, ignoreInit = FALSE)
 }

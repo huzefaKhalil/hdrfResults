@@ -1,8 +1,5 @@
-dVals <- reactiveValues(selectedHdrf = NULL,
-                        availableHdrf = NULL)
-dSelectedData <- reactiveValues()
 
-resultsDownloaderMS <- function(id, tData) {
+resultsDownloaderMS <- function(id, tData, dVals) {
   moduleServer(
     id,
     

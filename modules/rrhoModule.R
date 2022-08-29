@@ -1,10 +1,7 @@
-rrhoVals <- reactiveValues(selectedHdrf = NULL,
-                           availableHdrf = NULL)
-rrhoSelectedData <- reactiveValues()
-rrhoRes <- reactiveValues()
 
 
-rrhoMS <- function(id, tData) {
+
+rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
   
   moduleServer(
     id,
