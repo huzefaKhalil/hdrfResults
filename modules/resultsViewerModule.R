@@ -29,7 +29,7 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
             inputId = "pathways",
             choices = c("", names(tData$pathways)),
             selected = NULL,
-            server = TRUE
+            server = FALSE
           )
         }
         

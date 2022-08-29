@@ -55,55 +55,55 @@ modelsControl <- function(id, tData) {
         selected = getModel(tData$hdrf),
         inline = FALSE
       )
-    ),
+    )
     # Cannot use this because we are updating the choices server side...
     # ,
-    choicePopover(
-      id = ns("model"),
-      choice = "GRov",
-      title = "GRov",
-      content = paste("Mice with Glucocorticoid Receptor Overexpression.",
-                      "Includes mice with Life-time GRov (LTGRov) and",
-                      "Early-life GRov (ELGRov).")
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "bHR-bLR",
-      title = "bHR-bLR",
-      content = paste("Selectively bred rat line, bred for low (bLR) and high (bHR) locomoter activity.",
-                      "Experiments also includes comparisons between bHR, bLR and outbreds (bIR).")
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "FSL",
-      title = "FSL",
-      content = "Selectively bred rat line, Flinder\\'s Sensitive (FSL) and Flinder\\'s Resistant (FRL)."
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "Cort",
-      title = "Cort",
-      content = "Mice with CORT stress treatment."
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "CSDS",
-      title = "CSDS",
-      content = paste("Mice with Chronic Social Defeat Stress. In most experiments, these are",
-                      "categorized as either Susceptible or Reslient and then compared with Controls.")
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "Enrichment",
-      title = "Environmental Enrichment",
-      content = paste("Mice with either environmentally enrichmed housing or standard housing.")
-    ),
-    choicePopover(
-      id = ns("model"),
-      choice = "BDNF",
-      title = "BDNF",
-      content = "BDNF Val66Met"
-    )
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "GRov",
+    #   title = "GRov",
+    #   content = paste("Mice with Glucocorticoid Receptor Overexpression.",
+    #                   "Includes mice with Life-time GRov (LTGRov) and",
+    #                   "Early-life GRov (ELGRov).")
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "bHR-bLR",
+    #   title = "bHR-bLR",
+    #   content = paste("Selectively bred rat line, bred for low (bLR) and high (bHR) locomoter activity.",
+    #                   "Experiments also includes comparisons between bHR, bLR and outbreds (bIR).")
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "FSL",
+    #   title = "FSL",
+    #   content = "Selectively bred rat line, Flinder\\'s Sensitive (FSL) and Flinder\\'s Resistant (FRL)."
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "Cort",
+    #   title = "Cort",
+    #   content = "Mice with CORT stress treatment."
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "CSDS",
+    #   title = "CSDS",
+    #   content = paste("Mice with Chronic Social Defeat Stress. In most experiments, these are",
+    #                   "categorized as either Susceptible or Reslient and then compared with Controls.")
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "Enrichment",
+    #   title = "Environmental Enrichment",
+    #   content = paste("Mice with either environmentally enrichmed housing or standard housing.")
+    # ),
+    # choicePopover(
+    #   id = ns("model"),
+    #   choice = "BDNF",
+    #   title = "BDNF",
+    #   content = "BDNF Val66Met"
+    # )
   )
 }
 

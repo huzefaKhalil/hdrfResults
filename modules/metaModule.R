@@ -278,7 +278,7 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           inputId = "plotGene",
           choices = setNames(metaRes$metaOutput$id, metaRes$metaOutput$compound.symbol),
           selected = metaRes$metaOutput$id[1],
-          server = TRUE
+          server = FALSE
         )
       })
       
@@ -320,7 +320,7 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           inputId = "plotGene",
           choices = setNames(metaRes$metaOutput$id, metaRes$metaOutput$compound.symbol),
           selected = clickedPoint()$key,
-          server = TRUE
+          server = FALSE
         )
       })
       
