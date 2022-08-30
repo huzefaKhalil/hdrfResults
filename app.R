@@ -4,6 +4,8 @@ library(shinydashboard)
 library(plotly)
 library(future)
 library(promises)
+library(ipc)
+
 plan(multiprocess)
 
 #
