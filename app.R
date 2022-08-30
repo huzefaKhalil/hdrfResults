@@ -2,6 +2,9 @@
 library(shiny)
 library(shinydashboard)
 library(plotly)
+library(future)
+library(promises)
+plan(multiprocess)
 
 #
 # some global variables we need to set
@@ -31,6 +34,8 @@ source("modules/resultsViewerModule.R", local = TRUE)
 source("modules/resultsDownloaderModule.R", local = TRUE)
 source("modules/metaModule.R", local = TRUE)
 source("modules/rrhoModule.R", local = TRUE)
+
+options(future.globals.maxSize = 1024^3)
 
 tData <- loadData()
 
@@ -81,7 +86,7 @@ server <- function(input, output) {
   output$menu <- shinydashboard::renderMenu({
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem("Animal Models", tabName = "mInfo"),
-      shinydashboard::menuItem("Statistal Methods", tabName = "sInfo"),
+      shinydashboard::menuItem("Stats Methods", tabName = "sInfo"),
       shinydashboard::menuItem("Results Viewer", tabName = "viewer"),
       shinydashboard::menuItem("Data Download", tabName = "downloader"),
       shinydashboard::menuItem("Meta Analysis", tabName = "meta"),

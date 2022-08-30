@@ -8,6 +8,9 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
     
     function(input, output, session) {
       
+      theData <- reactiveVal()
+      theRes <- reactiveVal()
+      
       # this method updates the comparisons which are available to the user
       updateSelection <- function() {
         req(input$treatment)
@@ -170,135 +173,326 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
       shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
-        tryCatch({
-          withProgress({
-            
-            incProgress(0.1, detail = "Fetching data")
-            
-            sIds <- getIds(rrhoVals$selectedHdrf)
-            sIds <- getComparisonById(tData$hdrf, sIds)
-            
-            # get selected data
-            rrhoSelectedData$sData <-
-              isolate({
-                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-                theData <- flattenDge(sIds, conn = tempConn)
-                DBI::dbDisconnect(tempConn)
-                theData
-              })
-            
-            rrhoSelectedData$comps <- printComparison(rrhoVals$selectedHdrf)
-            
-            incProgress(0.2, detail = "Fetching data")
-            
-            inData <- list(rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[1]],
-                           rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[2]])
-            
-            inData <- lapply(inData, function(x) {
-              temp <- data.frame(x$id, -log10(x$pvalue) * sign(x$logFC),
-                                 stringsAsFactors = FALSE)
-              # remove duplicates
-              temp[!duplicated(temp[, 2]), ]
-            })
-            
-            commonGenes <- lapply(inData, function(x) x[, 1])
-            commonGenes <- intersect(commonGenes[[1]], commonGenes[[2]])
-            
-            # get the common genes
-            list1 <- inData[[1]][inData[[1]][, 1] %in% commonGenes, ]
-            list2 <- inData[[2]][inData[[2]][, 1] %in% commonGenes, ]
-            
-            incProgress(0.3, detail = "Running RRHO")
-            
-            rrhoRes$resList <- RRHO2(list1, list2,
-                                     method = input$statistic,
-                                     log10.ind = TRUE)
-            rrhoRes$geneList <- list(
-              "Up.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpUp]$compound.symbol,
-              "Down.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownDown]$compound.symbol,
-              "Up.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpDown]$compound.symbol,
-              "Down.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownUp]$compound.symbol
-            )
-            # convert to df
-            maxN <- max(sapply(rrhoRes$geneList, length))
-            rrhoRes$geneList <- lapply(rrhoRes$geneList, function(x) {
-              length(x) <- maxN
-              return(x)
-            })
-            rrhoRes$geneList <- do.call(cbind, rrhoRes$geneList)
-            
-            incProgress(0.8, detail = "Generating Plots")
-            
-            rast <- raster::raster(rrhoRes$resList$hypermat)
-            rPoints <- data.frame(raster::rasterToPoints(rast))
-            
-            jet.colors <- colorRampPalette(c("#00007F", "blue",
-                                             "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00",
-                                             "red", "#7F0000"))
-            legendLab <- ifelse(input$statistic == "fisher", "-log(odds ratio)", "-log(pvalue)")
-            
-            rrhoRes$enrichmentPlot <- 
-              ggplot(data = rPoints) + 
-              geom_tile(aes(x = 1-y, y = x, fill = layer)) + 
-              scale_fill_gradientn(colors = jet.colors(101),
-                                   guide = guide_colorbar(title = legendLab,
-                                                          title.position = "left",
-                                                          title.theme = element_text(angle = 90),
-                                                          title.hjust = 0.5,
-                                                          title.vjust = 0.5,
-                                                          barheight = grid::unit(0.5, "npc"))) +
-              coord_equal() +
-              theme_bw() +
-              annotate("text", x = 0.05, y = -0.05, label = "Up", size = 6) +
-              annotate("text", x = 0.5, y = -0.05, label = rrhoSelectedData$comps[1], size = 6) +
-              annotate("text", x = 0.95, y = -0.05, label = "Down", size = 6) +
-              annotate("text", x = -0.05, y = 0.05, label = "Up", angle = 90, size = 6) +
-              annotate("text", x = -0.05, y = 0.5, label = rrhoSelectedData$comps[2], angle = 90, size = 6) +
-              annotate("text", x = -0.05, y = 0.95, label = "Down", angle = 90, size = 6) +
-              theme(panel.grid = element_blank(),
-                    panel.border = element_blank(),
-                    axis.line = element_blank(),
-                    axis.ticks = element_blank(),
-                    axis.text = element_blank(),
-                    axis.title = element_blank())
-            
-            incProgress(0.9, detail = "Generating Plots")
-            
-            vList <- list("Upregulated Genes" = rrhoRes$resList$ConcordantVenn$UpUp,
-                          "Downregulated Genes" = rrhoRes$resList$ConcordantVenn$DownDown,
-                          "Up Down" = rrhoRes$resList$DiscordantVenn$UpDown,
-                          "Down Up" = rrhoRes$resList$DiscordantVenn$DownUp)
-            
-            rrhoRes$vennPlots <- Map(function(x, nx) {
-              
-              pTemp <- VennDiagram::draw.pairwise.venn(
-                x$area1,
-                x$area2,
-                x$cross.area,
-                category = rrhoSelectedData$comps,
-                scaled = TRUE, lwd = 0,
-                fill = c("cornflowerblue", "darkorchid1"),
-                ind = FALSE, cat.dist = 0.03,
-                cex = 1, cat.cex = 1.2, cat.pos = c(200, 160), ext.text = FALSE
-              )
-              
-              tTemp <- grid::textGrob(nx, y=unit(0.92,"npc"), 
-                                      vjust=0, gp=grid::gpar(fontsize=15))
-              pTemp <- grid::gTree(children=grid::gList(pTemp, tTemp))
-              
-              return(pTemp)
-              
-            }, vList, names(vList))
-            
-            ## todo the venn diagrams
-          }, message = "RRHO")
-        }, finally = {
-          shinyjs::enable("runAnalysis")
-          shinyjs::enable("saveEnrichment")
-          shinyjs::enable("saveGeneList")
+        theData(NULL)
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 0,
+          title = "Loading Data"
+        )
+        
+        sIds <- getIds(rrhoVals$selectedHdrf)
+        sIds <- getComparisonById(tData$hdrf, sIds)
+        
+        future({
+          tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+          theData2 <- flattenDge(sIds, conn = tempConn)
+          DBI::dbDisconnect(tempConn)
+          theData2
+        }, seed = TRUE) %...>% theData
+        
+        NULL
+      })
+      
+      observe({
+        req(theData())
+        
+        theRes(NULL)
+        
+        rrhoSelectedData$sData <- theData()
+        theData(NULL)
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 10,
+          title = "Running RRHO - This can take a while!"
+        )
+        
+        rrhoSelectedData$comps <- printComparison(rrhoVals$selectedHdrf)
+        
+        inData <- list(rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[1]],
+                       rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[2]])
+        
+        inData <- lapply(inData, function(x) {
+          temp <- data.frame(x$id, -log10(x$pvalue) * sign(x$logFC),
+                             stringsAsFactors = FALSE)
+          # remove duplicates
+          temp[!duplicated(temp[, 2]), ]
         })
         
+        commonGenes <- lapply(inData, function(x) x[, 1])
+        commonGenes <- intersect(commonGenes[[1]], commonGenes[[2]])
+        
+        # get the common genes
+        list1 <- inData[[1]][inData[[1]][, 1] %in% commonGenes, ]
+        list2 <- inData[[2]][inData[[2]][, 1] %in% commonGenes, ]
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 15,
+          title = "Running RRHO - This can take a while!"
+        )
+        
+        statistic <- input$statistic
+        
+        future({
+          RRHO2(list1, list2,
+                method = statistic,
+                log10.ind = TRUE)
+        }, seed = TRUE) %...>% theRes
+        
+        NULL
+        
       })
+      
+      observe({
+        req(theRes())
+        
+        rrhoRes$resList <- theRes()
+        theRes(NULL)
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 60,
+          title = "Running RRHO - Finishing up!"
+        )
+        
+        rrhoRes$geneList <- list(
+          "Up.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpUp]$compound.symbol,
+          "Down.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownDown]$compound.symbol,
+          "Up.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpDown]$compound.symbol,
+          "Down.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownUp]$compound.symbol
+        )
+        # convert to df
+        maxN <- max(sapply(rrhoRes$geneList, length))
+        rrhoRes$geneList <- lapply(rrhoRes$geneList, function(x) {
+          length(x) <- maxN
+          return(x)
+        })
+        rrhoRes$geneList <- do.call(cbind, rrhoRes$geneList)
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 80,
+          title = "Generating Plots"
+        )
+        
+        rast <- raster::raster(rrhoRes$resList$hypermat)
+        rPoints <- data.frame(raster::rasterToPoints(rast))
+        
+        jet.colors <- colorRampPalette(c("#00007F", "blue",
+                                         "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00",
+                                         "red", "#7F0000"))
+        legendLab <- ifelse(input$statistic == "fisher", "-log(odds ratio)", "-log(pvalue)")
+        
+        rrhoRes$enrichmentPlot <- 
+          ggplot(data = rPoints) + 
+          geom_tile(aes(x = 1-y, y = x, fill = layer)) + 
+          scale_fill_gradientn(colors = jet.colors(101),
+                               guide = guide_colorbar(title = legendLab,
+                                                      title.position = "left",
+                                                      title.theme = element_text(angle = 90),
+                                                      title.hjust = 0.5,
+                                                      title.vjust = 0.5,
+                                                      barheight = grid::unit(0.5, "npc"))) +
+          coord_equal() +
+          theme_bw() +
+          annotate("text", x = 0.05, y = -0.05, label = "Up", size = 6) +
+          annotate("text", x = 0.5, y = -0.05, label = rrhoSelectedData$comps[1], size = 6) +
+          annotate("text", x = 0.95, y = -0.05, label = "Down", size = 6) +
+          annotate("text", x = -0.05, y = 0.05, label = "Up", angle = 90, size = 6) +
+          annotate("text", x = -0.05, y = 0.5, label = rrhoSelectedData$comps[2], angle = 90, size = 6) +
+          annotate("text", x = -0.05, y = 0.95, label = "Down", angle = 90, size = 6) +
+          theme(panel.grid = element_blank(),
+                panel.border = element_blank(),
+                axis.line = element_blank(),
+                axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                axis.title = element_blank())
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 90,
+          title = "Generating Plots"
+        )
+        
+        vList <- list("Upregulated Genes" = rrhoRes$resList$ConcordantVenn$UpUp,
+                      "Downregulated Genes" = rrhoRes$resList$ConcordantVenn$DownDown,
+                      "Up Down" = rrhoRes$resList$DiscordantVenn$UpDown,
+                      "Down Up" = rrhoRes$resList$DiscordantVenn$DownUp)
+        
+        rrhoRes$vennPlots <- Map(function(x, nx) {
+          
+          pTemp <- VennDiagram::draw.pairwise.venn(
+            x$area1,
+            x$area2,
+            x$cross.area,
+            category = rrhoSelectedData$comps,
+            scaled = TRUE, lwd = 0,
+            fill = c("cornflowerblue", "darkorchid1"),
+            ind = FALSE, cat.dist = 0.03,
+            cex = 1, cat.cex = 1.2, cat.pos = c(200, 160), ext.text = FALSE
+          )
+          
+          tTemp <- grid::textGrob(nx, y=unit(0.92,"npc"), 
+                                  vjust=0, gp=grid::gpar(fontsize=15))
+          pTemp <- grid::gTree(children=grid::gList(pTemp, tTemp))
+          
+          return(pTemp)
+          
+        }, vList, names(vList))
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "rrhoProgress",
+          value = 100,
+          title = "All Done!"
+        )
+        
+        shinyjs::enable("runAnalysis")
+        shinyjs::enable("saveEnrichment")
+        shinyjs::enable("saveGeneList")
+        
+      })
+      
+      # shinyjs::onclick("runAnalysis", {
+      #   shinyjs::disable("runAnalysis")
+      #   
+      #   tryCatch({
+      #     withProgress({
+      #       
+      #       incProgress(0.1, detail = "Fetching data")
+      #       
+      #       sIds <- getIds(rrhoVals$selectedHdrf)
+      #       sIds <- getComparisonById(tData$hdrf, sIds)
+      #       
+      #       # get selected data
+      #       rrhoSelectedData$sData <-
+      #         isolate({
+      #           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+      #           theData <- flattenDge(sIds, conn = tempConn)
+      #           DBI::dbDisconnect(tempConn)
+      #           theData
+      #         })
+      #       
+      #       rrhoSelectedData$comps <- printComparison(rrhoVals$selectedHdrf)
+      #       
+      #       incProgress(0.2, detail = "Fetching data")
+      #       
+      #       inData <- list(rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[1]],
+      #                      rrhoSelectedData$sData[comparisonID == names(rrhoSelectedData$comps)[2]])
+      #       
+      #       inData <- lapply(inData, function(x) {
+      #         temp <- data.frame(x$id, -log10(x$pvalue) * sign(x$logFC),
+      #                            stringsAsFactors = FALSE)
+      #         # remove duplicates
+      #         temp[!duplicated(temp[, 2]), ]
+      #       })
+      #       
+      #       commonGenes <- lapply(inData, function(x) x[, 1])
+      #       commonGenes <- intersect(commonGenes[[1]], commonGenes[[2]])
+      #       
+      #       # get the common genes
+      #       list1 <- inData[[1]][inData[[1]][, 1] %in% commonGenes, ]
+      #       list2 <- inData[[2]][inData[[2]][, 1] %in% commonGenes, ]
+      #       
+      #       incProgress(0.3, detail = "Running RRHO")
+      #       
+      #       rrhoRes$resList <- RRHO2(list1, list2,
+      #                                method = input$statistic,
+      #                                log10.ind = TRUE)
+      #       rrhoRes$geneList <- list(
+      #         "Up.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpUp]$compound.symbol,
+      #         "Down.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownDown]$compound.symbol,
+      #         "Up.Down" = tData$hdrf@ids[rrhoRes$resList$geneLists$UpDown]$compound.symbol,
+      #         "Down.Up" = tData$hdrf@ids[rrhoRes$resList$geneLists$DownUp]$compound.symbol
+      #       )
+      #       # convert to df
+      #       maxN <- max(sapply(rrhoRes$geneList, length))
+      #       rrhoRes$geneList <- lapply(rrhoRes$geneList, function(x) {
+      #         length(x) <- maxN
+      #         return(x)
+      #       })
+      #       rrhoRes$geneList <- do.call(cbind, rrhoRes$geneList)
+      #       
+      #       incProgress(0.8, detail = "Generating Plots")
+      #       
+      #       rast <- raster::raster(rrhoRes$resList$hypermat)
+      #       rPoints <- data.frame(raster::rasterToPoints(rast))
+      #       
+      #       jet.colors <- colorRampPalette(c("#00007F", "blue",
+      #                                        "#007FFF", "cyan", "#7FFF7F", "yellow", "#FF7F00",
+      #                                        "red", "#7F0000"))
+      #       legendLab <- ifelse(input$statistic == "fisher", "-log(odds ratio)", "-log(pvalue)")
+      #       
+      #       rrhoRes$enrichmentPlot <- 
+      #         ggplot(data = rPoints) + 
+      #         geom_tile(aes(x = 1-y, y = x, fill = layer)) + 
+      #         scale_fill_gradientn(colors = jet.colors(101),
+      #                              guide = guide_colorbar(title = legendLab,
+      #                                                     title.position = "left",
+      #                                                     title.theme = element_text(angle = 90),
+      #                                                     title.hjust = 0.5,
+      #                                                     title.vjust = 0.5,
+      #                                                     barheight = grid::unit(0.5, "npc"))) +
+      #         coord_equal() +
+      #         theme_bw() +
+      #         annotate("text", x = 0.05, y = -0.05, label = "Up", size = 6) +
+      #         annotate("text", x = 0.5, y = -0.05, label = rrhoSelectedData$comps[1], size = 6) +
+      #         annotate("text", x = 0.95, y = -0.05, label = "Down", size = 6) +
+      #         annotate("text", x = -0.05, y = 0.05, label = "Up", angle = 90, size = 6) +
+      #         annotate("text", x = -0.05, y = 0.5, label = rrhoSelectedData$comps[2], angle = 90, size = 6) +
+      #         annotate("text", x = -0.05, y = 0.95, label = "Down", angle = 90, size = 6) +
+      #         theme(panel.grid = element_blank(),
+      #               panel.border = element_blank(),
+      #               axis.line = element_blank(),
+      #               axis.ticks = element_blank(),
+      #               axis.text = element_blank(),
+      #               axis.title = element_blank())
+      #       
+      #       incProgress(0.9, detail = "Generating Plots")
+      #       
+      #       vList <- list("Upregulated Genes" = rrhoRes$resList$ConcordantVenn$UpUp,
+      #                     "Downregulated Genes" = rrhoRes$resList$ConcordantVenn$DownDown,
+      #                     "Up Down" = rrhoRes$resList$DiscordantVenn$UpDown,
+      #                     "Down Up" = rrhoRes$resList$DiscordantVenn$DownUp)
+      #       
+      #       rrhoRes$vennPlots <- Map(function(x, nx) {
+      #         
+      #         pTemp <- VennDiagram::draw.pairwise.venn(
+      #           x$area1,
+      #           x$area2,
+      #           x$cross.area,
+      #           category = rrhoSelectedData$comps,
+      #           scaled = TRUE, lwd = 0,
+      #           fill = c("cornflowerblue", "darkorchid1"),
+      #           ind = FALSE, cat.dist = 0.03,
+      #           cex = 1, cat.cex = 1.2, cat.pos = c(200, 160), ext.text = FALSE
+      #         )
+      #         
+      #         tTemp <- grid::textGrob(nx, y=unit(0.92,"npc"), 
+      #                                 vjust=0, gp=grid::gpar(fontsize=15))
+      #         pTemp <- grid::gTree(children=grid::gList(pTemp, tTemp))
+      #         
+      #         return(pTemp)
+      #         
+      #       }, vList, names(vList))
+      #       
+      #       ## todo the venn diagrams
+      #     }, message = "RRHO")
+      #   }, finally = {
+      #     shinyjs::enable("runAnalysis")
+      #     shinyjs::enable("saveEnrichment")
+      #     shinyjs::enable("saveGeneList")
+      #   })
+      #   
+      # })
       
       output$enrichment <- renderPlot({
         req(rrhoRes$enrichmentPlot)

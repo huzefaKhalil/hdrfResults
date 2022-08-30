@@ -9,6 +9,15 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
       # save directory for the meta analysis
       saveDir <- file.path("resources/metaRes")
       
+      # now for ipc and futures stuff
+      queue <- shinyQueue()
+      queue$consumer$start(250)  # Execute signal ever 250milliseconds
+      
+      metaOutput <- reactiveVal()    # this holds the output of the meta-analysis
+      geneList <- reactiveVal()
+      geneOn <- reactiveVal()
+      theData <- reactiveVal()
+      
       # this method updates the comparisons which are available to the user
       updateSelection <- function() {
         req(input$treatment)
@@ -154,8 +163,24 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
       })
       
       #****************************************************
+      #* Update the progress bar
+      observe({
+        req(geneOn(), geneList())
+
+        val <- which(geneList() == geneOn()) / length(geneList()) * 100
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "metaProgress",
+          value = val,
+          title = "Running Meta-Analysis"
+        )
+        
+      })
       
-      # now we get to the part which runs the meta-analysis
+      #****************************************************
+      
+      # now we get to the part which runs the meta-analysis. This first part just gets the data.
       observe({
         shinyjs::disable("runAnalysis")
         req(metaVals$selectedHdrf)
@@ -167,26 +192,26 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
       shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
+        theData(NULL)
+
         sIds <- getIds(metaVals$selectedHdrf)
         nSelected <- length(sIds)
         
+        # TODO
         # 1. Check if the meta-analysis exists
         fName <- file.path(saveDir, paste0(digest::digest(sIds), ".csv"))
         
-        # 2. If it exists, return the data
-        if (file.exists(fName)) {
-          
-        } else {
-          
-          shinyWidgets::updateProgressBar(
-            session,
-            id = "metaProgress",
-            value = 0,
-            title = "Loading Data"
-          )
-          
-          # 3. If the file doesn't exist, let's get the data
-          sIds <- getComparisonById(tData$hdrf, sIds)
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "metaProgress",
+          value = 0,
+          title = "Loading Data"
+        )
+        
+        sIds <- getComparisonById(tData$hdrf, sIds)
+        
+        # 3. If the file doesn't exist, let's get the data
+        future({
           
           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
           theData <- flattenDge(sIds, conn = tempConn)
@@ -195,32 +220,46 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           # first, split it by id
           theData <- split(theData, by = "id")
           
-          if (input$statistic == "cohensD") {
-            st <- "cohensD"
-            vt <- "varD"
-          } else {
-            st <- "hedgesG"
-            vt <- "varG"
-          }
+          theData     # actually return this
           
-          # now apply over them.. let's make it parallel with mclapply
-          totalDone <- 0
-          total <- length(theData)
-          
-          # make the cluster
-          #pboptions(type = "none")
-          metaRes$data <- theData
-          
-          # output <- parallel::mcmapply(function(x, nx) {
-          metaOutput <- mapply(function(x, nx) {
-            totalDone <<- totalDone + 1
+        }, seed = TRUE) %...>% theData
+        
+        NULL  # return something while the data is loading is running
+        
+      })
+      
+      # run the meta-analysis calculations!
+      observe({
+        req(theData())
+
+        metaOutput(NULL)
+        geneOn(NULL)
+        geneList(NULL)
+
+        if (input$statistic == "cohensD") {
+          st <- "cohensD"
+          vt <- "varD"
+        } else {
+          st <- "hedgesG"
+          vt <- "varG"
+        }
+        
+        theData <- theData()
+        geneList(names(theData))
+        
+        future({
+          mapply(function(x, nx) {
             
-            shinyWidgets::updateProgressBar(
-              session,
-              id = "metaProgress",
-              value = ((totalDone / total) * 100),
-              title = "Running Meta-Analysis"
-            )
+            queue$producer$fireAssignReactive("geneOn", nx)
+            
+            #totalDone <<- totalDone + 1
+            
+            # shinyWidgets::updateProgressBar(
+            #   session,
+            #   id = "metaProgress",
+            #   value = ((totalDone / total) * 100),
+            #   title = "Running Meta-Analysis"
+            # )
             
             if (nrow(x) < (nSelected*3/4)) return(NULL) #make sure at least 75% x are present
             
@@ -235,39 +274,51 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
             }, error = function(e) return(NULL), finally = {})
             
           }, theData, names(theData), SIMPLIFY = FALSE)
-          #mc.cores = getOption("mc.cores", 4L))
           
-          shinyWidgets::updateProgressBar(
-            session,
-            id = "metaProgress",
-            value = 100,
-            title = "Finishing up"
-          )
-          
-          metaOutput <- data.table::rbindlist(metaOutput[lengths(metaOutput) != 0])
-          metaOutput$fdr <- p.adjust(metaOutput$pval, method = "BH")
-          metaOutput$logPval <- -log10(metaOutput$pval)
-          metaOutput <- merge(metaOutput,
-                              tData$hdrf@ids[, c("id", "compound.symbol")],
-                              all.x = TRUE, all.y = FALSE, by = "id")
-          metaOutput$hoverText <- paste0("Symbol: ", metaOutput$compound.symbol, "<br>",
-                                         "Estimate: ", format(metaOutput$estimate, digits = 4), "<br>",
-                                         "Adjusted P-value:", format(metaOutput$fdr, digits = 4))
-          metaOutput <- metaOutput[order(metaOutput$pval), ]
-          
-          metaRes$metaOutput <- metaOutput
-          
-          shinyWidgets::updateProgressBar(
-            session,
-            id = "metaProgress",
-            value = 100,
-            title = "All Done!"
-          )
-          
-          shinyjs::enable("saveResult")
-          shinyjs::enable("runAnalysis")
-        }
+        }, seed = TRUE) %...>% metaOutput
         
+        NULL # return something while meta-analysis is running
+      })
+      
+      # now we have the output, let's format it into the finished data.table
+      observe({
+        
+        req(metaOutput())
+        geneList(NULL)
+        geneOn(NULL)
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "metaProgress",
+          value = 100,
+          title = "Finishing up - Generating results"
+        )
+        
+        metaOutput <- data.table::rbindlist(metaOutput()[lengths(metaOutput()) != 0])
+        metaOutput$fdr <- p.adjust(metaOutput$pval, method = "fdr")
+        metaOutput$logPval <- -log10(metaOutput$pval)
+        metaOutput <- merge(metaOutput,
+                            tData$hdrf@ids[, c("id", "compound.symbol")],
+                            all.x = TRUE, all.y = FALSE, by = "id")
+        metaOutput$hoverText <- paste0("Symbol: ", metaOutput$compound.symbol, "<br>",
+                                       "Estimate: ", format(metaOutput$estimate, digits = 4), "<br>",
+                                       "Adjusted P-value:", format(metaOutput$fdr, digits = 4))
+        metaOutput <- metaOutput[order(metaOutput$pval), ]
+        
+        metaRes$metaOutput <- metaOutput
+        metaRes$data <- theData()
+        
+        shinyWidgets::updateProgressBar(
+          session,
+          id = "metaProgress",
+          value = 100,
+          title = "All Done!"
+        )
+        
+        theData(NULL)
+        metaOutput(NULL)
+        shinyjs::enable("saveResult")
+        shinyjs::enable("runAnalysis")
       })
       
       observe({

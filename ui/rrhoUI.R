@@ -45,6 +45,15 @@ rrhoUI <- function(id, tData) {
             actionButton(inputId = ns("runAnalysis"),
                          label = "Run RRHO")
           )
+        ),
+        column(
+          width = 5,
+          shinyWidgets::progressBar(
+            id = ns("rrhoProgress"),
+            value = 0,
+            display_pct = TRUE,
+            title = "Awaiting Selection"
+          )
         )
       )
     ),
