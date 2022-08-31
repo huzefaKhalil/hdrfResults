@@ -19,7 +19,6 @@ maxGenes <- 100 # the number of max genes which can be selected for the viewer
 # These are the files which have various needed functions and which we need to source
 # first the Util functions
 source("util/hdrfUtil.R", local = TRUE)
-source("util/metaUtil.R", local = TRUE)
 source("util/rrhoUtil.R", local = TRUE)
 
 # then the UI functions

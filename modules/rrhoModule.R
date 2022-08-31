@@ -125,7 +125,6 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
       # })
       
       shinyjs::onclick("unSelectComparisons", {
-        #browser()
         # get the ids being moved back
         sIds <- input$selectedComparisons
         

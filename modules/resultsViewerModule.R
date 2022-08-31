@@ -1,6 +1,4 @@
-# resVals <- reactiveValues(selectedHdrf = NULL,
-#                           availableHdrf = NULL)
-# resSelectedData <- reactiveValues()
+
 
 resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
   moduleServer(
@@ -270,7 +268,6 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
       #############
       #observeEvent({req(input$runAnalysis, resVals$selectedHdrf, input$genes)}, {
       shinyjs::onclick("runAnalysis", {
-        #browser()
         #shinyjs::reset("runAnalysis")
         shinyjs::disable("runAnalysis")
         shinyjs::disable("downloadData")
@@ -568,7 +565,6 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
       output$saveAll <- downloadHandler(
         filename = "ForestPlots.zip",
         content = function(file) {
-          browser()
           dr <- tempdir()
           height <-
             200 + 19 * length(resSelectedData$heatmapr$matrix$cols)
