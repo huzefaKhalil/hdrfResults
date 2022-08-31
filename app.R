@@ -36,7 +36,7 @@ source("modules/resultsDownloaderModule.R", local = TRUE)
 source("modules/metaModule.R", local = TRUE)
 source("modules/rrhoModule.R", local = TRUE)
 
-options(future.globals.maxSize = 1024^3)
+options(future.globals.maxSize = 2 * 1024^3)
 
 tData <- loadData()
 
