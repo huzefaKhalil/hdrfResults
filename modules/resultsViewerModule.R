@@ -7,6 +7,17 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
     
     function(input, output, session) {
       
+      # create vals to be used with future ipc
+      sData <- reactiveVal()
+      pvalData <- reactiveVal()
+      estimateData <- reactiveVal()
+      forestPlots <- reactiveVal()
+      heatmapr <- reactiveVal()
+
+      # create the shinyQueue for the ipc
+      queue <- shinyQueue()
+      queue$consumer$start(250)   # check for stuff every 250ms
+      
       withProgress({
         incProgress(0.2, message = "Loading...")
         
@@ -93,12 +104,6 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
       }
       
       # these check for changes to the selection and updae available comparisons
-      # observeEvent(input$treatment, updateSelection())
-      # observeEvent(input$timepoint, updateSelection())
-      # observeEvent(input$region, updateSelection())
-      # observeEvent(input$sex, updateSelection())
-      # observeEvent(input$model, updateSelection())
-      # observeEvent(input$species, updateSelection())
       observe({
         req(input$treatment,
             input$timepoint,
@@ -266,118 +271,125 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
       #############
       # When the user presses the "View Results" Button, gathering all the actions here so as to get the progress bar
       #############
-      #observeEvent({req(input$runAnalysis, resVals$selectedHdrf, input$genes)}, {
       shinyjs::onclick("runAnalysis", {
         #shinyjs::reset("runAnalysis")
         shinyjs::disable("runAnalysis")
         shinyjs::disable("downloadData")
         
-        # if (is.null(resVals$selectedHdrf))
-        #   return(NULL)
+        sData(NULL)
+        pvalData(NULL)
+        estimateData(NULL)
+        forestPlots(NULL)
+        heatmapr(NULL)
         
-        tryCatch({
-          withProgress({
-            incProgress(0.1, detail = "Fetching data")
-            
-            sIds <- getIds(resVals$selectedHdrf)
-            
-            # make sure there are no duplicated compound symbols here
-            sGenes <-
-              input$genes[!duplicated(tData$hdrf@ids[input$genes]$compound.symbol)]
-            
-            # get selected data
-            resSelectedData$sData <-
-              isolate({
-                
-                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-                theData <- flattenDge(resVals$selectedHdrf, geneId = sGenes, conn = tempConn)
-                DBI::dbDisconnect(tempConn)
-                
-                theData
-              })
-            
-            incProgress(0.2, detail = "Fetching data")
-            
-            # get the columns for all comparisons
-            resSelectedData$pvalData <-
-              isolate({
-                
-                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-                
-                theData <- getColumnData(
-                  tData$hdrf,
-                  column = "pvalue",
-                  comparisonID = sIds,
-                  conn = tempConn
-                )
-                
-                DBI::dbDisconnect(tempConn)
-                
-                theData
-              })
-            
-            incProgress(0.3, detail = "Fetching data")
-            
-            resSelectedData$estimateData <-
-              isolate({
-                
-                tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
-                
-                theData <- getColumnData(
-                  tData$hdrf,
-                  column = "logFC",
-                  comparisonID = sIds,
-                  conn = tempConn
-                )
-                
-                DBI::dbDisconnect(tempConn)
-                
-                theData
-              })
-            
-            incProgress(0.6, detail = "Plotting data")
-            
-            # make the forest plots
-            resSelectedData$forestPlots <- isolate(
-              smoothForest(
-                resSelectedData$sData,
-                metaStatistic = TRUE,
-                includeModel = TRUE,
-                includeName = TRUE,
-                includeRegion = TRUE,
-                includeEstimate = TRUE,
-                includeTreatment = FALSE,
-                includeSex = FALSE,
-                includePval = TRUE,
-                orderBy = "estimate",
-                estimate = "hedgesG",
-                fontSize = 3.5,
-                ids = tData$hdrf@ids
-              )
-            )
-            
-            incProgress(0.8, detail = "Plottting data")
-            
-            resSelectedData$heatmapr <-
-              isolate(heatmap.3(resSelectedData$sData, ids = tData$hdrf@ids))
-            
-            # set the gene to plot
-            updateSelectizeInput(
-              session,
-              inputId = "plotGene",
-              choices = resSelectedData$heatmapr$matrix$rows,
-              selected = resSelectedData$heatmapr$matrix$rows[1],
-              server = FALSE
-            )
-            
-          }, message = "HDRF Results")
-        }, finally = {
-          shinyjs::enable("runAnalysis")
-          shinyjs::enable("downloadData")
+        progress <- AsyncProgress$new(session, value = 0.01, message = "HDRF Results", detail = "Fetching Data")
+
+        # get the selected ids
+        sIds <- getIds(resVals$selectedHdrf)
+        sHdrf <- resVals$selectedHdrf
+        
+        # make sure there are no duplicated compound symbols here
+        sGenes <- input$genes[!duplicated(tData$hdrf@ids[input$genes]$compound.symbol)]
+
+        future({
+          progress$set(value = 0.1, message = "HDRF Results", detail = "Fetching data")
           
-          shinyjs::enable("saveCurrent")
-          shinyjs::enable("saveAll")
-        })
+          # get selected data from the db
+          tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+          sData <- flattenDge(sHdrf, geneId = sGenes, conn = tempConn)
+          #DBI::dbDisconnect(tempConn)
+          
+          # fire off theData
+          queue$producer$fireAssignReactive("sData", sData)
+          
+          progress$set(value = 0.2, message = "HDRF Results", detail = "Fetching data")
+          
+          # now get the pval data and estimate data. This is necessary for the forest plots on the side
+          
+          #tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
+          theData <- getColumnData(
+            tData$hdrf,
+            column = "pvalue",
+            comparisonID = sIds,
+            conn = tempConn
+          )
+          #DBI::dbDisconnect(tempConn)
+          
+          progress$set(value = 0.4, message = "HDRF Results", detail = "Fetching data")
+          
+          queue$producer$fireAssignReactive("pvalData", theData)
+          
+          theData <- getColumnData(
+            tData$hdrf,
+            column = "logFC",
+            comparisonID = sIds,
+            conn = tempConn
+          )
+          
+          queue$producer$fireAssignReactive("estimateData", theData)
+          
+          progress$set(value = 0.6, message = "HDRF Results", detail = "Generating Plots")
+          
+          # close the DB connection
+          DBI::dbDisconnect(tempConn)
+          
+          # now the plots
+          forestPlots <- smoothForest(
+            sData,
+            metaStatistic = TRUE,
+            includeModel = TRUE,
+            includeName = TRUE,
+            includeRegion = TRUE,
+            includeEstimate = TRUE,
+            includeTreatment = FALSE,
+            includeSex = FALSE,
+            includePval = TRUE,
+            orderBy = "estimate",
+            estimate = "hedgesG",
+            fontSize = 3.5,
+            ids = tData$hdrf@ids
+          )
+          
+          queue$producer$fireAssignReactive("forestPlots", forestPlots)
+          
+          progress$set(value = 0.8, message = "HDRF Results", detail = "Generating Plots")
+          
+          heatmapr <- heatmap.3(sData, ids = tData$hdrf@ids)
+          
+          progress$close()
+          
+          heatmapr
+          
+        }, seed = TRUE) %...>% heatmapr
+        
+        NULL
+      })
+      
+      # now an observe to make sure all the stuff is done and to populate the graphs and all
+      observe({
+        req(sData(), pvalData(), estimateData(), forestPlots(), heatmapr())
+        
+        resSelectedData$sData <- sData()
+        resSelectedData$pvalData <- pvalData()
+        resSelectedData$estimateData <- estimateData()
+        resSelectedData$forestPlots <- forestPlots()
+        resSelectedData$heatmapr <- heatmapr()
+        
+        # set the gene to plot
+        updateSelectizeInput(
+          session,
+          inputId = "plotGene",
+          choices = resSelectedData$heatmapr$matrix$rows,
+          selected = resSelectedData$heatmapr$matrix$rows[1],
+          server = FALSE
+        )
+        
+        #enable the buttons
+        shinyjs::enable("runAnalysis")
+        shinyjs::enable("downloadData")
+        
+        shinyjs::enable("saveCurrent")
+        shinyjs::enable("saveAll")
       })
       
       # to download the data
@@ -508,32 +520,7 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
             yaxis = list(title = "-Log(p-value)")
           )
       })
-      
-      # forestPlots <- metaReactive2({
-      #   req(sData())
-      #   # lets activate the previous / next / save buttons
-      #   shinyjs::enable("saveCurrent")
-      #   shinyjs::enable("saveAll")
-      #
-      #   metaExpr(
-      #     smoothForest(
-      #       ..(sData()),
-      #       includeModel = TRUE,
-      #       includeName = TRUE,
-      #       includeRegion = TRUE,
-      #       includeEstimate = TRUE,
-      #       includeTreatment = FALSE,
-      #       includeSex = FALSE,
-      #       includePval = TRUE,
-      #       orderBy = "estimate",
-      #       estimate = "hedgesG",
-      #       ids = tData$hdrf@ids
-      #     )
-      #   )
-      #
-      # })
-      
-      
+
       # change the plot when the plot counter moves
       observeEvent(input$plotGene, {
         output$forest <-renderPlot({
@@ -584,73 +571,5 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
         },
         contentType = "application/zip"
       )
-      
-      
-      
-      # observe({
-      #   shinyjs::disable("downloadReport")
-      #   req(sData())
-      #   shinyjs::enable("downloadReport")
-      # })
-      
-      # heatmapCode <- reactive({
-      #   req(sData())
-      #   ec <- newExpansionContext()
-      #   # substitute reading from a file for the actual logic on server
-      #   ec$substituteMetaReactive(hdrf, function() {
-      #     metaExpr(readr::read_rds("hdrfData.rds"))
-      #   })
-      #
-      #   # expand code for the plot
-      #   expandChain(output$heatmap(),
-      #               .expansionContext = ec)
-      # })
-      #
-      # output$heatmapCode <- renderPrint({
-      #   heatmapCode()
-      # })
-      
-      # forestPlotCode <- reactive({
-      #   req(forestPlots())
-      #   ec <- newExpansionContext()
-      #   # substitute reading from a file for the actual logic on server
-      #   ec$substituteMetaReactive(hdrf, function() {
-      #     metaExpr(readr::read_rds("hdrfData.rds"))
-      #   })
-      #
-      #   # expand code for the plot
-      #   expandChain(output$forest(),
-      #               .expansionContext = ec)
-      # })
-      
-      # output$forestPlotCode <- renderPrint({
-      #   forestPlotCode()
-      # })
-      #
-      #   output$downloadReport <- downloadHandler(
-      #     "results.zip",
-      #     content = function(zipFilePath) {
-      #       files2Include <- c(
-      #         bundleAnalysisUtilScript("hdrf", "results"), # bundle utility R script file
-      #         file.path(
-      #           MBNI_SHINY_RESOURCES_DIR,
-      #           "hdrf",
-      #           "results",
-      #           "hdrfData.rds"
-      #         )
-      #       )
-      #
-      #       buildRmdBundle(
-      #         report_template = getAnalysisReportTemplatePath("hdrf", "results"),
-      #         output_zip_path = zipFilePath,
-      #         vars = list(
-      #           heatmap_code = heatmapCode(),
-      #           forest_plot_code = forestPlotCode()
-      #         ),
-      #         include_files = files2Include,
-      #         render_args = list(output_format = "all")
-      #       )
-      #     }
-      #   )
     })
 }

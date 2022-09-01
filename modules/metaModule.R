@@ -188,7 +188,6 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
       })
       
       # run the meta analysis!
-      #observeEvent(input$runAnalysis, {
       shinyjs::onclick("runAnalysis", {
         shinyjs::disable("runAnalysis")
         
@@ -251,15 +250,6 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           mapply(function(x, nx) {
             
             queue$producer$fireAssignReactive("geneOn", nx)
-            
-            #totalDone <<- totalDone + 1
-            
-            # shinyWidgets::updateProgressBar(
-            #   session,
-            #   id = "metaProgress",
-            #   value = ((totalDone / total) * 100),
-            #   title = "Running Meta-Analysis"
-            # )
             
             if (nrow(x) < (nSelected*3/4)) return(NULL) #make sure at least 75% x are present
             
