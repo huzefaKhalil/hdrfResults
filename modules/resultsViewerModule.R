@@ -360,7 +360,7 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
           
           heatmapr
           
-        }, seed = TRUE) %...>% heatmapr
+        }) %...>% heatmapr
         
         NULL
       })
