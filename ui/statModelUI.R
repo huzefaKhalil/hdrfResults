@@ -46,7 +46,9 @@ statModelUI <- function(id) {
       collapsed = FALSE,
       
       p("The LogFC we get from the limma-voom workflow is an empirical Bayes estimate. The methodology to caluculate an effect size estimate from this statistic is described in ",
-        a("Marot, et al (2009)", href="https://academic.oup.com/bioinformatics/article/25/20/2692/192916"), ".")
+        a("Marot, et al (2009)", href="https://academic.oup.com/bioinformatics/article/25/20/2692/192916"), ".",
+        "There are two effect size estimates we calculate: Cohen's d and Hedge's g.",
+        "The latter is more conservative and corrects for small sample size.")
       
     ),
     
@@ -62,6 +64,19 @@ statModelUI <- function(id) {
         a("metafor", href="https://metafor-project.org"), " R package.")
       
     ),
+    
+    box(
+      width = 8,
+      title = "Rank Rank Hypergeometric Overlap",
+      status = "success",
+      solidHeader = TRUE,
+      collapsible = TRUE,
+      collapsed = FALSE,
+      
+      p("The RRHO method is useful for comparing the gene overlap between any two comparisons.",
+      "The methodology is described in ", a("Cahill et al (2018)", href = "https://doi.org/10.1038/s41598-018-27903-2"), ".")
+      
+    )
 
   )
 }

@@ -29,6 +29,7 @@ source("ui/metaUI.R", local = TRUE)
 source("ui/rrhoUI.R", local = TRUE)
 source("ui/animalModelsUI.R", local = TRUE)
 source("ui/statModelUI.R", local = TRUE)
+source("ui/welcomeUI.R", local = TRUE)
 
 # finally the modules themselves
 source("modules/resultsViewerModule.R", local = TRUE)
@@ -53,6 +54,7 @@ ui <- dashboardPage(
   dashboardBody(
     
     tabItems(
+      tabItem(tabName = "mWelcome", welcomeUI(id = "welcome")),
       tabItem(tabName = "mInfo", animalModelsUI(id = "animalModelInfo")),
       tabItem(tabName = "sInfo", statModelUI(id = "statModelInfo")),
       tabItem(tabName = "viewer", resultsViewerUI(id = "viewer", tData = tData, maxGenes = maxGenes)),
@@ -86,6 +88,7 @@ server <- function(input, output) {
   
   output$menu <- shinydashboard::renderMenu({
     shinydashboard::sidebarMenu(
+      shinydashboard::menuItem("Home", tabName = "mWelcome"),
       shinydashboard::menuItem("Animal Models", tabName = "mInfo"),
       shinydashboard::menuItem("Stats Methods", tabName = "sInfo"),
       shinydashboard::menuItem("Results Viewer", tabName = "viewer"),
