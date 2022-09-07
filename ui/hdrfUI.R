@@ -289,7 +289,8 @@ selectGenesRow <- function(id, tData, maxGenes) {
         multiple = TRUE,
         choices = NULL,
         selected = NULL,
-        options = list(maxItems = maxGenes)
+        options = list(maxItems = maxGenes,
+                       placeholder = "Select gene (type gene name)")
       )
     ),
     column(width = 1, h3("or")),
@@ -315,7 +316,8 @@ selectGenesRow <- function(id, tData, maxGenes) {
         label = h3("Choose Pathway"),
         multiple = FALSE,
         choices = NULL,
-        selected = NULL
+        selected = NULL,
+        options = list(placeholder = "Type pathway name here")
       )
     )
   )

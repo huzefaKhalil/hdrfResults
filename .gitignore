@@ -44,3 +44,5 @@ vignettes/*.pdf
 # ignore R!
 R/
 R/*
+
+Rplots*

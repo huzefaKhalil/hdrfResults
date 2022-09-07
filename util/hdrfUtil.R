@@ -132,47 +132,47 @@ updateSelectHdrf <- function(session, boxId, hd) {
   updateSelectInput(session, boxId, choice = comp)
 }
 
-# add a tooltip to checkbox choices
-choicePopover <-
-  function(id,
-           choice,
-           title,
-           content,
-           placement = "bottom",
-           trigger = "hover",
-           options = NULL) {
-    options = shinyBS:::buildTooltipOrPopoverOptionsList(title, placement, trigger, options, content)
-    options = paste0("{'", paste(
-      names(options),
-      options,
-      sep = "': '",
-      collapse = "', '"
-    ), "'}")
-    bsTag <- shiny::tags$script(shiny::HTML(
-      paste0(
-        "
-        $(document).ready(function() {
-        setTimeout(function() {
-        $('input', $('#",
-        id,
-        "')).each(function(){
-        if(this.getAttribute('value') == '",
-        choice,
-        "') {
-        opts = $.extend(",
-        options,
-        ", {html: true});
-        $(this.parentElement).popover('destroy');
-        $(this.parentElement).popover(opts);
-        }
-        })
-        }, 500)
-        });
-        "
-      )
-    ))
-    htmltools::attachDependencies(bsTag, shinyBS:::shinyBSDep)
-  }
+# add a tooltip to checkbox choices... we don't need this
+# choicePopover <-
+#   function(id,
+#            choice,
+#            title,
+#            content,
+#            placement = "bottom",
+#            trigger = "hover",
+#            options = NULL) {
+#     options = shinyBS:::buildTooltipOrPopoverOptionsList(title, placement, trigger, options, content)
+#     options = paste0("{'", paste(
+#       names(options),
+#       options,
+#       sep = "': '",
+#       collapse = "', '"
+#     ), "'}")
+#     bsTag <- shiny::tags$script(shiny::HTML(
+#       paste0(
+#         "
+#         $(document).ready(function() {
+#         setTimeout(function() {
+#         $('input', $('#",
+#         id,
+#         "')).each(function(){
+#         if(this.getAttribute('value') == '",
+#         choice,
+#         "') {
+#         opts = $.extend(",
+#         options,
+#         ", {html: true});
+#         $(this.parentElement).popover('destroy');
+#         $(this.parentElement).popover(opts);
+#         }
+#         })
+#         }, 500)
+#         });
+#         "
+#       )
+#     ))
+#     htmltools::attachDependencies(bsTag, shinyBS:::shinyBSDep)
+#   }
 
 # This sets code to have checkboxGroupInput in multiple columns
 multiColTweak <- list(tags$head(tags$style(
