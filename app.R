@@ -6,7 +6,7 @@ library(future)
 library(promises)
 library(ipc)
 
-plan(multiprocess)
+plan(multisession)
 
 #
 # some global variables we need to set
