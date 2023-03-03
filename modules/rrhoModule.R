@@ -197,7 +197,7 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
           session,
           id = "rrhoProgress",
           value = 10,
-          title = "Running RRHO - This can take a while!"
+          title = "Running RRHO - This can take a while. Progress bar will not update."
         )
         
         rrhoSelectedData$comps <- printComparison(rrhoVals$selectedHdrf)
@@ -223,7 +223,7 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
           session,
           id = "rrhoProgress",
           value = 15,
-          title = "Running RRHO - This can take a while!"
+          title = "Running RRHO - This can take a while. Progress bar will not update."
         )
         
         statistic <- input$statistic

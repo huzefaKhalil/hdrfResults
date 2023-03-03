@@ -182,6 +182,7 @@ resultsDownloaderMS <- function(id, tData, dVals) {
             incProgress(0.5, message = "Writing Data...")
             
             outFiles <- sapply(outDT, function(x) {
+              
               fn <- paste0(dr,
                            "/",
                            x$name[1],
@@ -197,7 +198,11 @@ resultsDownloaderMS <- function(id, tData, dVals) {
                       "se",
                       "t",
                       "pvalue",
-                      "fdr")]
+                      "fdr",
+                      "cohensD",
+                      "varD",
+                      "hedgesG",
+                      "varG")]
               data.table::fwrite(x, fn)
               return(fn)
             })
