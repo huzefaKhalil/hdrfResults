@@ -280,6 +280,7 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
                                          "red", "#7F0000"))
         legendLab <- ifelse(input$statistic == "fisher", "-log(odds ratio)", "-log(pvalue)")
         
+        browser()
         rrhoRes$enrichmentPlot <- 
           ggplot(data = rPoints) + 
           geom_raster(aes(x = 1-y, y = x, fill = layer), interpolate = TRUE) + 
