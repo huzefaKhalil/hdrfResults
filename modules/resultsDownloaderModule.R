@@ -192,17 +192,17 @@ resultsDownloaderMS <- function(id, tData, dVals) {
                            x$comparison[1],
                            ".csv")
               x <-
-                x[, c("ensembl",
-                      "symbol",
-                      "logFC",
-                      "se",
-                      "t",
-                      "pvalue",
-                      "fdr",
-                      "cohensD",
-                      "varD",
-                      "hedgesG",
-                      "varG")]
+                unique(x[, c("ensembl",
+                             "symbol",
+                             "logFC",
+                             "se",
+                             "t",
+                             "pvalue",
+                             "fdr",
+                             "cohensD",
+                             "varD",
+                             "hedgesG",
+                             "varG")])
               data.table::fwrite(x, fn)
               return(fn)
             })
