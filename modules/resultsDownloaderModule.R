@@ -214,7 +214,8 @@ resultsDownloaderMS <- function(id, tData, dVals) {
                 flags = "-j")
             
           })
-        }
+        },
+        contentType = "application/zip"
       )
     })
   

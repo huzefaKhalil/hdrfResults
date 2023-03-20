@@ -424,7 +424,8 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           toWrite <- metaRes$metaOutput[, c("compound.symbol", "estimate", "se", "pval", "fdr")]
           names(toWrite) <- c("Symbol", "Estimate", "SE", "Pvalue", "FDR")
           data.table::fwrite(toWrite, file)
-        }
+        },
+        contentType = "text/csv"
       )
       
     }
