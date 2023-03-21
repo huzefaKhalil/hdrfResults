@@ -291,7 +291,7 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
         # make sure there are no duplicated compound symbols here
         sGenes <- input$genes[!duplicated(tData$hdrf@ids[input$genes]$compound.symbol)]
 
-        future({
+        future_promise({
           progress$set(value = 0.1, message = "HDRF Results", detail = "Fetching data")
           
           # get selected data from the db
@@ -360,7 +360,7 @@ resultsViewerMS <- function(id, tData, resVals, resSelectedData) {
           
           heatmapr
           
-        }) %...>% heatmapr
+        }) %...>% heatmapr()
         
         NULL
       })

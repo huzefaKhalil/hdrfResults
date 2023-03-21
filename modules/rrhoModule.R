@@ -175,12 +175,12 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
         sIds <- getIds(rrhoVals$selectedHdrf)
         sIds <- getComparisonById(tData$hdrf, sIds)
         
-        future({
+        future_promise({
           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
           theData2 <- flattenDge(sIds, conn = tempConn)
           DBI::dbDisconnect(tempConn)
           theData2
-        }, seed = TRUE) %...>% theData
+        }, seed = TRUE) %...>% theData()
         
         NULL
       })
@@ -228,11 +228,11 @@ rrhoMS <- function(id, tData, rrhoVals, rrhoSelectedData, rrhoRes) {
         
         statistic <- input$statistic
         
-        future({
+        future_promise({
           RRHO2(list1, list2,
                 method = statistic,
                 log10.ind = TRUE)
-        }, seed = TRUE) %...>% theRes
+        }, seed = TRUE) %...>% theRes()
         
         NULL
         

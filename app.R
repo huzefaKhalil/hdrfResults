@@ -6,7 +6,12 @@ library(future)
 library(promises)
 library(ipc)
 
-plan(multicore)
+# check if running in RStudio and set the plan accordingly
+if (Sys.getenv("RSTUDIO") == "1") {
+  plan(multisession)
+} else {
+  plan(multicore)
+}
 
 #
 # some global variables we need to set

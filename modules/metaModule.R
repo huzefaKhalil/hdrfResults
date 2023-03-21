@@ -210,7 +210,7 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
         sIds <- getComparisonById(tData$hdrf, sIds)
         
         # 3. If the file doesn't exist, let's get the data
-        future({
+        future_promise({
           
           tempConn <- DBI::dbConnect(RSQLite::SQLite(), tData$conn)
           theData <- flattenDge(sIds, conn = tempConn)
@@ -221,7 +221,7 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
           
           theData     # actually return this
           
-        }, seed = TRUE) %...>% theData
+        }, seed = TRUE) %...>% theData()
         
         NULL  # return something while the data is loading is running
         
@@ -246,8 +246,8 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
         theData <- theData()
         geneList(names(theData))
         
-        future({
-          mapply(function(x, nx) {
+        future_promise({
+          future.apply::future_mapply(function(x, nx) {
             
             queue$producer$fireAssignReactive("geneOn", nx)
             
@@ -265,7 +265,7 @@ metaAnalysisMS <- function(id, tData, metaVals, metaRes) {
             
           }, theData, names(theData), SIMPLIFY = FALSE)
           
-        }, seed = TRUE) %...>% metaOutput
+        }, seed = TRUE) %...>% metaOutput()
         
         NULL # return something while meta-analysis is running
       })
